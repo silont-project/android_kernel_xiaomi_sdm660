@@ -88,6 +88,13 @@ config CPU_FREQ_DEFAULT_GOV_USERSPACE
 	  program shall be able to set the CPU dynamically without having
 	  to enable the userspace governor manually.
 
+config CPU_FREQ_DEFAULT_GOV_ALESSA
+	bool "alessa"
+	select CPU_FREQ_GOV_ALESSA
+	help
+	  'alessa' This driver adds a dynamic cpufreq policy governor.
+	  The governor does a periodic polling and changes frequency based on the CPU utilization.
+
 config CPU_FREQ_DEFAULT_GOV_ONDEMAND
 	bool "ondemand"
 	select CPU_FREQ_GOV_ONDEMAND
@@ -176,6 +183,10 @@ config CPU_FREQ_GOV_USERSPACE
 	  For details, take a look at <file:Documentation/cpu-freq/>.
 
 	  If in doubt, say Y.
+
+config CPU_FREQ_GOV_ALESSA
+	tristate "'alessa' cpufreq governor"
+	depends on CPU_FREQ
 
 config CPU_FREQ_GOV_ONDEMAND
 	tristate "'ondemand' cpufreq policy governor"
