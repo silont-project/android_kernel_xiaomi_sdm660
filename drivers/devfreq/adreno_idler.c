@@ -50,8 +50,8 @@ static int idlewaitms = 500;
 module_param_named(adreno_idler_idlewaitms, idlewaitms, int, 0664);
 
 /* Taken from ondemand */
-static int downdifferenctial = 20;
-module_param_named(adreno_idler_downdifferenctial, downdifferenctial, int, 0664);
+static unsigned int downdifferential = 20;
+module_param_named(adreno_idler_downdifferential, downdifferential, uint, 0664);
 
 /* Master switch to activate whole routine */
 static int adreno_idler_active = 1;
@@ -81,9 +81,9 @@ int adreno_idler(struct devfreq_dev_status stats, struct devfreq *devfreq,
 			   No need to calculate things, so bail out. */
 			return 1;
 		}
-		if (idle_lasttime + idlewaitms <= get_time_inms() &&
-		    stats.busy_time * 100 < stats.total_time * downdifferenctial) {
-			/* We are idle for idlewaitms! Ramp down the frequency now. */
+		if (idlecount >= idlewait &&
+		    stats.busy_time * 100 < stats.total_time * downdifferential) {
+			/* We are idle for (idlewait + 1)'th time! Ramp down the frequency now. */
 			*freq = devfreq->profile->freq_table[devfreq->profile->max_state - 1];
 			return 1;
 		}
