@@ -11,6 +11,9 @@
 #include <linux/page_owner.h>
 #include "internal.h"
 
+#define CREATE_TRACE_POINTS
+#include <trace/events/page_isolation.h>
+
 static int set_migratetype_isolate(struct page *page,
 				bool skip_hwpoisoned_pages)
 {
@@ -269,6 +272,8 @@ int test_pages_isolated(unsigned long start_pfn, unsigned long end_pfn,
 	pfn = __test_page_isolated_in_pageblock(start_pfn, end_pfn,
 						skip_hwpoisoned_pages);
 	spin_unlock_irqrestore(&zone->lock, flags);
+
+	trace_test_pages_isolated(start_pfn, end_pfn, pfn);
 
 	return pfn < end_pfn ? -EBUSY : 0;
 }
