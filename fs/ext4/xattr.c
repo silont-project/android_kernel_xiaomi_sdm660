@@ -1093,6 +1093,17 @@ static int ext4_xattr_ibody_set(struct inode *inode,
 	return 0;
 }
 
+static int ext4_xattr_value_same(struct ext4_xattr_search *s,
+				 struct ext4_xattr_info *i)
+{
+	void *value;
+
+	if (le32_to_cpu(s->here->e_value_size) != i->value_len)
+		return 0;
+	value = ((void *)s->base) + le16_to_cpu(s->here->e_value_offs);
+	return !memcmp(value, i->value, i->value_len);
+}
+
 /*
  * ext4_xattr_set_handle()
  *
