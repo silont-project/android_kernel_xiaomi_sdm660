@@ -90,21 +90,22 @@ static int read_mmp_block(struct super_block *sb, struct buffer_head **bh,
 	submit_bh(READ_SYNC | REQ_META | REQ_PRIO, *bh);
 	wait_on_buffer(*bh);
 	if (!buffer_uptodate(*bh)) {
-		brelse(*bh);
-		*bh = NULL;
 		ret = -EIO;
 		goto warn_exit;
 	}
-
 	mmp = (struct mmp_struct *)((*bh)->b_data);
-	if (le32_to_cpu(mmp->mmp_magic) != EXT4_MMP_MAGIC)
+	if (le32_to_cpu(mmp->mmp_magic) != EXT4_MMP_MAGIC) {
 		ret = -EFSCORRUPTED;
-	else if (!ext4_mmp_csum_verify(sb, mmp))
+		goto warn_exit;
+	}
+	if (!ext4_mmp_csum_verify(sb, mmp)) {
 		ret = -EFSBADCRC;
-	else
-		return 0;
-
+		goto warn_exit;
+	}
+	return 0;
 warn_exit:
+	brelse(*bh);
+	*bh = NULL;
 	ext4_warning(sb, "Error %d while reading MMP block %llu",
 		     ret, mmp_block);
 	return ret;
@@ -180,15 +181,13 @@ static int kmmpd(void *data)
 		    EXT4_FEATURE_INCOMPAT_MMP)) {
 			ext4_warning(sb, "kmmpd being stopped since MMP feature"
 				     " has been disabled.");
-			EXT4_SB(sb)->s_mmp_tsk = NULL;
-			goto failed;
+			goto exit_thread;
 		}
 
 		if (sb->s_flags & MS_RDONLY) {
 			ext4_warning(sb, "kmmpd being stopped since filesystem "
 				     "has been remounted as readonly.");
-			EXT4_SB(sb)->s_mmp_tsk = NULL;
-			goto failed;
+			goto exit_thread;
 		}
 
 		diff = jiffies - last_update_time;
@@ -210,9 +209,7 @@ static int kmmpd(void *data)
 			if (retval) {
 				ext4_error(sb, "error reading MMP data: %d",
 					   retval);
-
-				EXT4_SB(sb)->s_mmp_tsk = NULL;
-				goto failed;
+				goto exit_thread;
 			}
 
 			mmp_check = (struct mmp_struct *)(bh_check->b_data);
@@ -224,7 +221,9 @@ static int kmmpd(void *data)
 					     "The filesystem seems to have been"
 					     " multiply mounted.");
 				ext4_error(sb, "abort");
-				goto failed;
+				put_bh(bh_check);
+				retval = -EBUSY;
+				goto exit_thread;
 			}
 			put_bh(bh_check);
 		}
@@ -247,7 +246,8 @@ static int kmmpd(void *data)
 
 	retval = write_mmp_block(sb, bh);
 
-failed:
+exit_thread:
+	EXT4_SB(sb)->s_mmp_tsk = NULL;
 	kfree(data);
 	brelse(bh);
 	return retval;
