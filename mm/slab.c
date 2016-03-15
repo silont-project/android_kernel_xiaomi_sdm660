@@ -2466,7 +2466,7 @@ static void cache_init_objs_debug(struct kmem_cache *cachep, struct page *page)
 
 	for (i = 0; i < cachep->num; i++) {
 		void *objp = index_to_obj(cachep, page, i);
-		kasan_init_slab_obj(cachep, objp);
+
 		if (cachep->flags & SLAB_STORE_USER)
 			*dbg_userword(cachep, objp) = NULL;
 
@@ -2506,18 +2506,13 @@ static void cache_init_objs(struct kmem_cache *cachep,
 			    struct page *page)
 {
 	int i;
-	void *objp;
 
 	cache_init_objs_debug(cachep, page);
 
 	for (i = 0; i < cachep->num; i++) {
 		/* constructor could break poison info */
-		if (DEBUG == 0 && cachep->ctor) {
-			objp = index_to_obj(cachep, page, i);
-			kasan_unpoison_object_data(cachep, objp);
-			cachep->ctor(objp);
-			kasan_poison_object_data(cachep, objp);
-		}
+		if (DEBUG == 0 && cachep->ctor)
+			cachep->ctor(index_to_obj(cachep, page, i));
 
 		set_free_obj(page, i, i);
 	}
