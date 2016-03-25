@@ -2129,6 +2129,10 @@ struct task_struct {
 	int pagefault_disabled;
 	atomic64_t *concurrent_active_time;
 	atomic64_t *concurrent_policy_time;
+
+#ifdef CONFIG_MMU
+	struct list_head oom_reaper_list;
+#endif
 /* CPU-specific state of this task */
 	struct thread_struct thread;
 /*
