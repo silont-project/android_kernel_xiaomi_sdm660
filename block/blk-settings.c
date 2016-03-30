@@ -833,30 +833,6 @@ void blk_queue_update_dma_alignment(struct request_queue *q, int mask)
 }
 EXPORT_SYMBOL(blk_queue_update_dma_alignment);
 
-/**
- * blk_queue_flush - configure queue's cache flush capability
- * @q:		the request queue for the device
- * @flush:	0, REQ_FLUSH or REQ_FLUSH | REQ_FUA | REQ_BARRIER
- *
- * Tell block layer cache flush capability of @q.  If it supports
- * flushing, REQ_FLUSH should be set.  If it supports bypassing
- * write cache for individual writes, REQ_FUA should be set. If cache
- * barrier is supported set REQ_BARRIER.
- */
-void blk_queue_flush(struct request_queue *q, unsigned int flush)
-{
-	WARN_ON_ONCE(flush & ~(REQ_FLUSH | REQ_FUA | REQ_BARRIER));
-
-	if (WARN_ON_ONCE(!(flush & REQ_FLUSH) && ((flush & REQ_FUA) ||
-			(flush & REQ_BARRIER)))) {
-		flush &= ~REQ_FUA;
-		flush &= ~REQ_BARRIER;
-	}
-
-	q->flush_flags = flush & (REQ_FLUSH | REQ_FUA | REQ_BARRIER);
-}
-EXPORT_SYMBOL_GPL(blk_queue_flush);
-
 void blk_queue_flush_queueable(struct request_queue *q, bool queueable)
 {
 	q->flush_not_queueable = !queueable;
