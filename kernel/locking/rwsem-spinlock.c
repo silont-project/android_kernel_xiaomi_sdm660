@@ -191,7 +191,7 @@ int __down_read_trylock(struct rw_semaphore *sem)
 /*
  * get a write lock on the semaphore
  */
-int __sched __down_write_common(struct rw_semaphore *sem, int state)
+void __sched __down_write(struct rw_semaphore *sem)
 {
 	struct rwsem_waiter waiter;
 	struct task_struct *tsk;
@@ -233,16 +233,6 @@ out:
 	raw_spin_unlock_irqrestore(&sem->wait_lock, flags);
 
 	return ret;
-}
-
-void __sched __down_write(struct rw_semaphore *sem)
-{
-	__down_write_common(sem, TASK_UNINTERRUPTIBLE);
-}
-
-int __sched __down_write_killable(struct rw_semaphore *sem)
-{
-	return __down_write_common(sem, TASK_KILLABLE);
 }
 
 /*
