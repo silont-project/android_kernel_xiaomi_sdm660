@@ -741,7 +741,6 @@ void mmput(struct mm_struct *mm)
 	if (atomic_dec_and_test(&mm->mm_users))
 		__mmput(mm);
 }
-EXPORT_SYMBOL_GPL(mmput);
 
 static void mmput_async_fn(struct work_struct *work)
 {
