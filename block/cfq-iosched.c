@@ -4301,14 +4301,14 @@ static void cfq_completed_request(struct request_queue *q, struct request *rq)
 		cfq_schedule_dispatch(cfqd);
 }
 
-static void cfqq_boost_on_prio(struct cfq_queue *cfqq, int rw)
+static void cfqq_boost_on_prio(struct cfq_queue *cfqq, int op_flags)
 {
 	/*
 	 * If REQ_PRIO is set, boost class and prio level, if it's below
 	 * BE/NORM. If prio is not set, restore the potentially boosted
 	 * class/prio level.
 	 */
-	if (!(rw & REQ_PRIO)) {
+	if (!(op_flags & REQ_PRIO)) {
 		cfqq->ioprio_class = cfqq->org_ioprio_class;
 		cfqq->ioprio = cfqq->org_ioprio;
 	} else {
@@ -4329,7 +4329,7 @@ static inline int __cfq_may_queue(struct cfq_queue *cfqq)
 	return ELV_MQUEUE_MAY;
 }
 
-static int cfq_may_queue(struct request_queue *q, int rw)
+static int cfq_may_queue(struct request_queue *q, int op_flags)
 {
 	struct cfq_data *cfqd = q->elevator->elevator_data;
 	struct task_struct *tsk = current;
@@ -4346,10 +4346,10 @@ static int cfq_may_queue(struct request_queue *q, int rw)
 	if (!cic)
 		return ELV_MQUEUE_MAY;
 
-	cfqq = cic_to_cfqq(cic, rw_is_sync(rw));
+	cfqq = cic_to_cfqq(cic, rw_is_sync(op_flags));
 	if (cfqq) {
 		cfq_init_prio_data(cfqq, cic);
-		cfqq_boost_on_prio(cfqq, rw);
+		cfqq_boost_on_prio(cfqq, op_flags);
 
 		return __cfq_may_queue(cfqq);
 	}
