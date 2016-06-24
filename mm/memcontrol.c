@@ -4366,7 +4366,7 @@ mem_cgroup_css_alloc(struct cgroup_subsys_state *parent_css)
 free_out:
 	idr_remove(&mem_cgroup_idr, memcg->id.id);
 	__mem_cgroup_free(memcg);
-	return ERR_PTR(error);
+	return ERR_PTR(-ENOMEM);
 }
 
 static int
