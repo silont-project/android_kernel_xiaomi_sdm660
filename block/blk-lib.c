@@ -38,9 +38,20 @@ int __blkdev_issue_discard(struct block_device *bdev, sector_t sector,
 	if ((type & REQ_SECURE) && !blk_queue_secdiscard(q))
 		return -EOPNOTSUPP;
 
-	bs_mask = (bdev_logical_block_size(bdev) >> 9) - 1;
-	if ((sector | nr_sects) & bs_mask)
-		return -EINVAL;
+	if (flags & BLKDEV_DISCARD_SECURE) {
+		if (flags & BLKDEV_DISCARD_ZERO)
+			return -EOPNOTSUPP;
+		if (!blk_queue_secure_erase(q))
+			return -EOPNOTSUPP;
+		op = REQ_OP_SECURE_ERASE;
+	} else {
+		if (!blk_queue_discard(q))
+			return -EOPNOTSUPP;
+		if ((flags & BLKDEV_DISCARD_ZERO) &&
+		    !q->limits.discard_zeroes_data)
+			return -EOPNOTSUPP;
+		op = REQ_OP_DISCARD;
+	}
 
 	/* Zero-sector (unknown) and one-sector granularities are the same.  */
 	granularity = max(q->limits.discard_granularity >> 9, 1U);
@@ -115,8 +126,8 @@ int blkdev_issue_discard(struct block_device *bdev, sector_t sector,
 	ret = __blkdev_issue_discard(bdev, sector, nr_sects, gfp_mask, type,
 			&bio);
 	if (!ret && bio) {
-		ret = submit_bio_wait(type, bio);
-		if (ret == -EOPNOTSUPP)
+		ret = submit_bio_wait(bio);
+		if (ret == -EOPNOTSUPP && !(flags & BLKDEV_DISCARD_ZERO))
 			ret = 0;
 		bio_put(bio);
 	}
@@ -256,11 +267,11 @@ static int __blkdev_issue_zeroout(struct block_device *bdev, sector_t sector,
 int blkdev_issue_zeroout(struct block_device *bdev, sector_t sector,
 			 sector_t nr_sects, gfp_t gfp_mask, bool discard)
 {
-	struct request_queue *q = bdev_get_queue(bdev);
-
-	if (discard && blk_queue_discard(q) && q->limits.discard_zeroes_data &&
-	    blkdev_issue_discard(bdev, sector, nr_sects, gfp_mask, 0) == 0)
-		return 0;
+	if (discard) {
+		if (!blkdev_issue_discard(bdev, sector, nr_sects, gfp_mask,
+				BLKDEV_DISCARD_ZERO))
+			return 0;
+	}
 
 	if (bdev_write_same(bdev) &&
 	    blkdev_issue_write_same(bdev, sector, nr_sects, gfp_mask,
