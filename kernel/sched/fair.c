@@ -3441,6 +3441,12 @@ static inline void update_load_avg(struct sched_entity *se, int flags)
 	}
 }
 
+unsigned long sched_get_rt_rq_util(int cpu)
+{
+	struct rt_rq *rt_rq = &(cpu_rq(cpu)->rt);
+	return rt_rq->avg.util_avg;
+}
+
 /**
  * attach_entity_load_avg - attach this entity to its cfs_rq load avg
  * @cfs_rq: cfs_rq to attach to
