@@ -1642,7 +1642,17 @@ extern unsigned int sysctl_sched_use_walt_cpu_util;
 extern unsigned int walt_ravg_window;
 extern bool walt_disabled;
 
-#endif /* CONFIG_SMP */
+static inline unsigned long task_util(struct task_struct *p)
+{
+#ifdef CONFIG_SCHED_WALT
+	if (!walt_disabled && sysctl_sched_use_walt_task_util) {
+		unsigned long demand = p->ravg.demand;
+		return (demand << 10) / walt_ravg_window;
+	}
+#endif
+	return READ_ONCE(p->se.avg.util_avg);
+}
+#endif
 
 static inline void sched_rt_avg_update(struct rq *rq, u64 rt_delta)
 {
