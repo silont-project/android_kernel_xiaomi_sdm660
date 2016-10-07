@@ -181,7 +181,7 @@ unsigned long oom_badness(struct task_struct *p, struct mem_cgroup *memcg,
 	 */
 	adj = (long)p->signal->oom_score_adj;
 	if (adj == OOM_SCORE_ADJ_MIN ||
-			test_bit(MMF_OOM_REAPED, &p->mm->flags) ||
+			test_bit(MMF_OOM_SKIP, &p->mm->flags) ||
 			in_vfork(p)) {
 		task_unlock(p);
 		return 0;
@@ -284,7 +284,7 @@ enum oom_scan_t oom_scan_process_thread(struct oom_control *oc,
 	/*
 	 * This task already has access to memory reserves and is being killed.
 	 * Don't allow any other task to have access to the reserves unless
-	 * the task has MMF_OOM_REAPED because chances that it would release
+	 * the task has MMF_OOM_SKIP because chances that it would release
 	 * any memory is quite low.
 	 */
 	if (!is_sysrq_oom(oc) && atomic_read(&task->signal->oom_victims)) {
@@ -570,7 +570,7 @@ done:
 	 * Hide this mm from OOM killer because it has been either reaped or
 	 * somebody can't call up_write(mmap_sem).
 	 */
-	set_bit(MMF_OOM_REAPED, &mm->flags);
+	set_bit(MMF_OOM_SKIP, &mm->flags);
 
 	/* Drop a reference taken by wake_oom_reaper */
 	put_task_struct(tsk);
@@ -648,8 +648,6 @@ void mark_oom_victim(struct task_struct *tsk)
 	if (test_and_set_tsk_thread_flag(tsk, TIF_MEMDIE))
 		return;
 
-	atomic_inc(&tsk->signal->oom_victims);
-
 	/* oom_mm is bound to the signal struct life time. */
 	if (!cmpxchg(&tsk->signal->oom_mm, NULL, mm))
 		atomic_inc(&tsk->signal->oom_mm->mm_count);
@@ -671,7 +669,6 @@ void exit_oom_victim(struct task_struct *tsk)
 {
 	if (!test_and_clear_tsk_thread_flag(tsk, TIF_MEMDIE))
 		return;
-	atomic_dec(&tsk->signal->oom_victims);
 
 	if (!atomic_dec_return(&oom_victims))
 		wake_up_all(&oom_victims_wait);
@@ -767,7 +764,7 @@ bool task_will_free_mem(struct task_struct *task)
 	 * This task has already been drained by the oom reaper so there are
 	 * only small chances it will free some more
 	 */
-	if (test_bit(MMF_OOM_REAPED, &mm->flags))
+	if (test_bit(MMF_OOM_SKIP, &mm->flags))
 		return false;
 
 	if (atomic_read(&mm->mm_users) <= 1)
@@ -915,7 +912,7 @@ void oom_kill_process(struct oom_control *oc, struct task_struct *p,
 			 * killer to guarantee OOM forward progress.
 			 */
 			can_oom_reap = false;
-			set_bit(MMF_OOM_REAPED, &mm->flags);
+			set_bit(MMF_OOM_SKIP, &mm->flags);
 			pr_info("oom killer %d (%s) has mm pinned by %d (%s)\n",
 					task_pid_nr(victim), victim->comm,
 					task_pid_nr(p), p->comm);
