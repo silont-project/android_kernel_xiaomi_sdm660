@@ -208,6 +208,32 @@ static struct attribute_group cpu_isolated_attr_group = {
 
 #endif
 
+static ssize_t uevent_suppress_store(struct device *dev,
+				struct device_attribute *attr,
+				const char *buf, size_t count)
+{
+	bool val;
+	int ret;
+
+	ret = strtobool(buf, &val);
+	if (ret < 0)
+		return ret;
+
+	dev_set_uevent_suppress(dev, val);
+	return count;
+}
+
+static DEVICE_ATTR_WO(uevent_suppress);
+
+static struct attribute *uevent_suppress_cpu_attrs[] = {
+	&dev_attr_uevent_suppress.attr,
+	NULL
+};
+
+static struct attribute_group uevent_suppress_cpu_attr_group = {
+	.attrs = uevent_suppress_cpu_attrs,
+};
+
 static const struct attribute_group *common_cpu_attr_groups[] = {
 #ifdef CONFIG_KEXEC
 	&crash_note_cpu_attr_group,
@@ -225,6 +251,7 @@ static const struct attribute_group *hotplugable_cpu_attr_groups[] = {
 #ifdef CONFIG_HOTPLUG_CPU
 	&cpu_isolated_attr_group,
 #endif
+	&uevent_suppress_cpu_attr_group,
 	NULL
 };
 
