@@ -1085,9 +1085,6 @@ static struct vmap_area *alloc_vmap_area(unsigned long size,
 	BUG_ON(offset_in_page(size));
 	BUG_ON(!is_power_of_2(align));
 
-	if (unlikely(!vmap_initialized))
-		return ERR_PTR(-EBUSY);
-
 	might_sleep();
 
 	va = kmem_cache_alloc_node(vmap_area_cachep,
