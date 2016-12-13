@@ -65,7 +65,8 @@ struct blk_mq_hw_ctx {
 };
 
 struct blk_mq_tag_set {
-	struct blk_mq_ops	*ops;
+	unsigned int		*mq_map;
+	const struct blk_mq_ops	*ops;
 	unsigned int		nr_hw_queues;
 	unsigned int		queue_depth;	/* max hw supported */
 	unsigned int		reserved_tags;
