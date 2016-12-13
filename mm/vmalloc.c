@@ -1314,9 +1314,6 @@ static void free_unmap_vmap_area(struct vmap_area *va)
 {
 	flush_cache_vunmap(va->va_start, va->va_end);
 	unmap_vmap_area(va);
-	if (debug_pagealloc_enabled())
-		flush_tlb_kernel_range(va->va_start, va->va_end);
-
 	free_vmap_area_noflush(va);
 }
 
