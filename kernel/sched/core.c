@@ -1328,6 +1328,7 @@ static int __set_cpus_allowed_ptr(struct task_struct *p,
 		return -EINVAL;
 
 	rq = task_rq_lock(p, &rf);
+        update_rq_clock(rq);
 
 	/*
 	 * Must re-check here, to close a race against __kthread_bind(),
