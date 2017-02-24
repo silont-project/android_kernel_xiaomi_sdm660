@@ -2427,6 +2427,11 @@ static void *__vmalloc_area_node(struct vm_struct *area, gfp_t gfp_mask,
 	for (i = 0; i < area->nr_pages; i++) {
 		struct page *page;
 
+		if (fatal_signal_pending(current)) {
+			area->nr_pages = i;
+			goto fail;
+		}
+
 		if (node == NUMA_NO_NODE)
 			page = alloc_kmem_pages(alloc_mask|highmem_mask, order);
 		else
