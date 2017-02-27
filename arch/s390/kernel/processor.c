@@ -38,7 +38,9 @@ void cpu_init(void)
 	struct cpuid *id = this_cpu_ptr(&cpu_id);
 
 	get_cpu_id(id);
-	atomic_inc(&init_mm.mm_count);
+	if (machine_has_cpu_mhz)
+		update_cpu_mhz(NULL);
+	mmgrab(&init_mm);
 	current->active_mm = &init_mm;
 	BUG_ON(current->mm);
 	enter_lazy_tlb(&init_mm, current);

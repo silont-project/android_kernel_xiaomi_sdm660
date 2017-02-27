@@ -432,8 +432,8 @@ static void exit_mm(struct task_struct *tsk)
 		__set_task_state(tsk, TASK_RUNNING);
 		down_read(&mm->mmap_sem);
 	}
-	atomic_inc(&mm->mm_count);
-	BUG_ON(mm != tsk->active_mm);
+	mmgrab(mm);
+	BUG_ON(mm != current->active_mm);
 	/* more a memory barrier than a real lock */
 	task_lock(tsk);
 	tsk->mm = NULL;
