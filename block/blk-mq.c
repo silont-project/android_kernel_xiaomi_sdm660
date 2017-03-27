@@ -78,7 +78,7 @@ static void blk_mq_hctx_clear_pending(struct blk_mq_hw_ctx *hctx,
 	clear_bit(CTX_TO_BIT(hctx, ctx), &bm->word);
 }
 
-void blk_mq_freeze_queue_start(struct request_queue *q)
+void blk_freeze_queue_start(struct request_queue *q)
 {
 	int freeze_depth;
 
@@ -88,7 +88,7 @@ void blk_mq_freeze_queue_start(struct request_queue *q)
 		blk_mq_run_hw_queues(q, false);
 	}
 }
-EXPORT_SYMBOL_GPL(blk_mq_freeze_queue_start);
+EXPORT_SYMBOL_GPL(blk_freeze_queue_start);
 
 static void blk_mq_freeze_queue_wait(struct request_queue *q)
 {
@@ -108,7 +108,7 @@ void blk_freeze_queue(struct request_queue *q)
 	 * no blk_unfreeze_queue(), and blk_freeze_queue() is not
 	 * exported to drivers as the only user for unfreeze is blk_mq.
 	 */
-	blk_mq_freeze_queue_start(q);
+	blk_freeze_queue_start(q);
 	blk_mq_freeze_queue_wait(q);
 }
 
@@ -648,7 +648,7 @@ static void blk_mq_rq_timer(unsigned long priv)
 	 * percpu_ref_tryget directly, because we need to be able to
 	 * obtain a reference even in the short window between the queue
 	 * starting to freeze, by dropping the first reference in
-	 * blk_mq_freeze_queue_start, and the moment the last request is
+	 * blk_freeze_queue_start, and the moment the last request is
 	 * consumed, marked by the instant q_usage_counter reaches
 	 * zero.
 	 */

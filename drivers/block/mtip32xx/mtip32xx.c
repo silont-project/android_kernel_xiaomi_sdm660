@@ -4180,7 +4180,7 @@ static int mtip_block_remove(struct driver_data *dd)
 		dev_info(&dd->pdev->dev, "device %s surprise removal\n",
 						dd->disk->disk_name);
 
-	blk_mq_freeze_queue_start(dd->queue);
+	blk_freeze_queue_start(dd->queue);
 	blk_mq_stop_hw_queues(dd->queue);
 	blk_mq_all_tag_busy_iter(dd->tags.tags[0], mtip_no_dev_cleanup, dd);
 

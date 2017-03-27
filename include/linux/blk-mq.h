@@ -236,7 +236,7 @@ void blk_mq_all_tag_busy_iter(struct blk_mq_tags *tags, busy_tag_iter_fn *fn,
 		void *priv);
 void blk_mq_freeze_queue(struct request_queue *q);
 void blk_mq_unfreeze_queue(struct request_queue *q);
-void blk_mq_freeze_queue_start(struct request_queue *q);
+void blk_freeze_queue_start(struct request_queue *q);
 
 /*
  * Driver command data is immediately after the request. So subtract request

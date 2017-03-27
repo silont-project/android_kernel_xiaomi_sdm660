@@ -671,7 +671,7 @@ int blk_queue_enter(struct request_queue *q, gfp_t gfp)
 			   !atomic_read(&q->mq_freeze_depth) ||
 			   blk_queue_dying(q));
 		/*
-		 * read pair of barrier in blk_mq_freeze_queue_start(),
+		 * read pair of barrier in blk_freeze_queue_start(),
 		 * we need to order reading __PERCPU_REF_DEAD flag of
 		 * .q_usage_counter and reading .mq_freeze_depth,
 		 * otherwise the following wait may never return if the
