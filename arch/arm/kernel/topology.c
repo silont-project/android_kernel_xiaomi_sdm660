@@ -72,7 +72,6 @@ static unsigned long *__cpu_capacity;
 
 static unsigned long middle_capacity = 1;
 static bool cap_from_dt = true;
-extern bool cap_parsing_failed;
 extern void normalize_cpu_capacity(void);
 extern int __init parse_cpu_capacity(struct device_node *cpu_node, int cpu);
 
@@ -188,11 +187,9 @@ static int __init parse_dt_topology(void)
 	else
 		middle_capacity = ((max_capacity / 3)
 				>> (SCHED_CAPACITY_SHIFT-1)) + 1;
-out_map:
-	of_node_put(map);
-out:
-	of_node_put(cn);
-	return ret;
+
+	if (cap_from_dt)
+		normalize_cpu_capacity();
 }
 
 static const struct sched_group_energy * const cpu_core_energy(int cpu);
