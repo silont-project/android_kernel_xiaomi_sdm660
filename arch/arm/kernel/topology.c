@@ -128,11 +128,10 @@ static int __init parse_dt_topology(void)
 			continue;
 		}
 
-		/*
-		 * The CPU efficiency value passed from the device tree
-		 * overrides the value defined in the table_efficiency[]
-		 */
-		if (of_property_read_u32(cn, "efficiency", &efficiency) < 0) {
+		if (topology_parse_cpu_capacity(cn, cpu)) {
+			of_node_put(cn);
+			continue;
+		}
 
 			for (cpu_eff = table_efficiency;
 					cpu_eff->compatible; cpu_eff++)
@@ -184,7 +183,7 @@ static int __init parse_dt_topology(void)
 				>> (SCHED_CAPACITY_SHIFT-1)) + 1;
 
 	if (cap_from_dt)
-		normalize_cpu_capacity();
+		topology_normalize_cpu_scale();
 }
 
 static const struct sched_group_energy * const cpu_core_energy(int cpu);
@@ -198,15 +197,10 @@ static void update_cpu_capacity(unsigned int cpu)
 {
 	unsigned long capacity = SCHED_CAPACITY_SCALE;
 
-	if (cpu_core_energy(cpu)) {
-		int max_cap_idx = cpu_core_energy(cpu)->nr_cap_states - 1;
-		capacity = cpu_core_energy(cpu)->cap_states[max_cap_idx].cap;
-	}
-
-	set_capacity_scale(cpu, capacity);
+	topology_set_cpu_scale(cpu, cpu_capacity(cpu) / middle_capacity);
 
 	pr_info("CPU%u: update cpu_capacity %lu\n",
-		cpu, arch_scale_cpu_capacity(NULL, cpu));
+		cpu, topology_get_cpu_scale(NULL, cpu));
 }
 
 #else
