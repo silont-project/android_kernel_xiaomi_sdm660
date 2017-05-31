@@ -27,9 +27,6 @@
 #include <asm/cputype.h>
 #include <asm/topology.h>
 
-extern void normalize_cpu_capacity(void);
-extern int __init parse_cpu_capacity(struct device_node *cpu_node, int cpu);
-
 static DEFINE_PER_CPU(unsigned long, cpu_efficiency) = SCHED_CAPACITY_SCALE;
 DEFINE_PER_CPU(unsigned long, cpu_scale) = SCHED_CAPACITY_SCALE;
 
