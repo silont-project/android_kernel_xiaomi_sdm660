@@ -11,6 +11,7 @@
  * for more details.
  */
 
+#include <linux/arch_topology.h>
 #include <linux/cpu.h>
 #include <linux/cpumask.h>
 #include <linux/init.h>
@@ -19,29 +20,23 @@
 #include <linux/nodemask.h>
 #include <linux/of.h>
 #include <linux/sched.h>
-#include <linux/sched.h>
 #include <linux/sched_energy.h>
+#include <linux/slab.h>
+#include <linux/string.h>
 
 #include <asm/cputype.h>
 #include <asm/topology.h>
 
+extern bool cap_parsing_failed;
+extern void normalize_cpu_capacity(void);
+extern int __init parse_cpu_capacity(struct device_node *cpu_node, int cpu);
+
 static DEFINE_PER_CPU(unsigned long, cpu_efficiency) = SCHED_CAPACITY_SCALE;
-
-unsigned long arch_get_cpu_efficiency(int cpu)
-{
-	return per_cpu(cpu_efficiency, cpu);
-}
-
-static DEFINE_PER_CPU(unsigned long, cpu_scale) = SCHED_CAPACITY_SCALE;
+DEFINE_PER_CPU(unsigned long, cpu_scale) = SCHED_CAPACITY_SCALE;
 
 unsigned long scale_cpu_capacity(struct sched_domain *sd, int cpu)
 {
 	return per_cpu(cpu_scale, cpu);
-}
-
-static void set_capacity_scale(unsigned int cpu, unsigned long capacity)
-{
-	per_cpu(cpu_scale, cpu) = capacity;
 }
 
 static int __init get_cpu_for_node(struct device_node *node)
@@ -182,6 +177,12 @@ static int __init parse_cluster(struct device_node *cluster, int depth)
 	return 0;
 }
 
+static unsigned long *__cpu_capacity;
+#define cpu_capacity(cpu)	__cpu_capacity[cpu]
+
+static unsigned long middle_capacity = 1;
+static bool cap_from_dt = true;
+
 static int __init parse_dt_topology(void)
 {
 	struct device_node *cn, *map;
@@ -290,17 +291,13 @@ static struct sched_domain_topology_level arm64_topology[] = {
 
 static void update_cpu_capacity(unsigned int cpu)
 {
-	unsigned long capacity = SCHED_CAPACITY_SCALE;
+	if (!cpu_capacity(cpu) || cap_from_dt)
+		return;
 
-	if (cpu_core_energy(cpu)) {
-		int max_cap_idx = cpu_core_energy(cpu)->nr_cap_states - 1;
-		capacity = cpu_core_energy(cpu)->cap_states[max_cap_idx].cap;
-	}
+	topology_set_cpu_scale(cpu, cpu_capacity(cpu) / middle_capacity);
 
-	set_capacity_scale(cpu, capacity);
-
-	pr_info("CPU%d: update cpu_capacity %lu\n",
-		cpu, arch_scale_cpu_capacity(NULL, cpu));
+	pr_info("CPU%u: update cpu_capacity %lu\n",
+		cpu, topology_get_cpu_scale(NULL, cpu));
 }
 
 void update_cpu_power_capacity(int cpu)
