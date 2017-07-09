@@ -1814,6 +1814,8 @@ struct task_struct {
 	u64 utimescaled, stimescaled;
 #endif
 	u64 gtime;
+	atomic64_t *time_in_state;
+	unsigned int max_state;
 	struct prev_cputime prev_cputime;
 #ifdef CONFIG_VIRT_CPU_ACCOUNTING_GEN
 	seqlock_t vtime_seqlock;
