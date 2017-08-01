@@ -92,8 +92,46 @@ void static_key_slow_inc(struct static_key *key)
 }
 EXPORT_SYMBOL_GPL(static_key_slow_inc);
 
+void static_key_enable_cpuslocked(struct static_key *key)
+{
+	STATIC_KEY_CHECK_USE();
+
+	if (atomic_read(&key->enabled) > 0) {
+		WARN_ON_ONCE(atomic_read(&key->enabled) != 1);
+		return;
+	}
+
+	jump_label_lock();
+	if (atomic_read(&key->enabled) == 0) {
+		atomic_set(&key->enabled, -1);
+		jump_label_update(key);
+		/*
+		 * See static_key_slow_inc().
+		 */
+		atomic_set_release(&key->enabled, 1);
+	}
+	jump_label_unlock();
+}
+EXPORT_SYMBOL_GPL(static_key_enable_cpuslocked);
+
+void static_key_disable_cpuslocked(struct static_key *key)
+{
+	STATIC_KEY_CHECK_USE();
+
+	if (atomic_read(&key->enabled) != 1) {
+		WARN_ON_ONCE(atomic_read(&key->enabled) != 0);
+		return;
+	}
+
+	jump_label_lock();
+	if (atomic_cmpxchg(&key->enabled, 1, 0))
+		jump_label_update(key);
+	jump_label_unlock();
+}
+EXPORT_SYMBOL_GPL(static_key_disable_cpuslocked);
+
 static void __static_key_slow_dec(struct static_key *key,
-		unsigned long rate_limit, struct delayed_work *work)
+                unsigned long rate_limit, struct delayed_work *work)
 {
 	/*
 	 * The negative count check is valid even when a negative

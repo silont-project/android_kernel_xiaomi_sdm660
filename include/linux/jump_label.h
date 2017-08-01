@@ -157,6 +157,8 @@ extern int jump_label_text_reserved(void *start, void *end);
 extern void static_key_slow_inc(struct static_key *key);
 extern void static_key_slow_dec(struct static_key *key);
 extern void jump_label_apply_nops(struct module *mod);
+extern void static_key_enable_cpuslocked(struct static_key *key);
+extern void static_key_disable_cpuslocked(struct static_key *key);
 
 #define STATIC_KEY_INIT_TRUE					\
 	{ .enabled = ATOMIC_INIT(1),				\
@@ -387,8 +389,10 @@ extern bool ____wrong_branch_error(void);
  * Normal usage; boolean enable/disable.
  */
 
-#define static_branch_enable(x)		static_key_enable(&(x)->key)
-#define static_branch_disable(x)	static_key_disable(&(x)->key)
+#define static_branch_enable(x)			static_key_enable(&(x)->key)
+#define static_branch_disable(x)		static_key_disable(&(x)->key)
+#define static_branch_enable_cpuslocked(x)	static_key_enable_cpuslocked(&(x)->key)
+#define static_branch_disable_cpuslocked(x)	static_key_disable_cpuslocked(&(x)->key)
 
 #endif	/* _LINUX_JUMP_LABEL_H */
 
