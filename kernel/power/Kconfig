@@ -337,3 +337,10 @@ config ENERGY_MODEL
 	  The exact usage of the energy model is subsystem-dependent.
 
 	  If in doubt, say N.
+
+config BOEFFLA_WL_BLOCKER
+		bool "Boeffla generic wakelock blocker driver"
+		depends on PM
+		default N
+
+>>>>>>> c4da7907a8b3... boeffla_wl_blocker: add generic wakelock blocker driver v1.0.0
