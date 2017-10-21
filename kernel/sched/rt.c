@@ -4,6 +4,7 @@
  */
 
 #include "sched.h"
+#include "pelt.h"
 
 #include <linux/interrupt.h>
 #include <linux/slab.h>
@@ -1663,6 +1664,9 @@ static void check_preempt_curr_rt(struct rq *rq, struct task_struct *p, int flag
 #endif
 }
 
+static inline void sched_rt_update_capacity_req(struct rq *rq)
+{ }
+
 static struct sched_rt_entity *pick_next_rt_entity(struct rq *rq,
 						   struct rt_rq *rt_rq)
 {
@@ -2609,6 +2613,9 @@ static void task_tick_rt(struct rq *rq, struct task_struct *p, int queued)
 
 	update_curr_rt(rq);
 	update_rt_rq_load_avg(rq_clock_task(rq), cpu_of(rq), &rq->rt, 1);
+
+	if (rq->rt.rt_nr_running)
+		sched_rt_update_capacity_req(rq);
 
 	watchdog(rq, p);
 
