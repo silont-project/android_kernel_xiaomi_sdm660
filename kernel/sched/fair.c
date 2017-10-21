@@ -3313,11 +3313,6 @@ update_cfs_rq_load_avg(u64 now, struct cfs_rq *cfs_rq, bool update_freq)
 	return decayed;
 }
 
-int update_rt_rq_load_avg(u64 now, int cpu, struct rt_rq *rt_rq, int running)
-{
-	return 0;
-}
-
 /**
  * attach_entity_load_avg - attach this entity to its cfs_rq load avg
  * @cfs_rq: cfs_rq to attach to
