@@ -2054,6 +2054,7 @@ struct task_struct {
 		bool free_stack;
 	} async_free;
 
+	atomic64_t *concurrent_active_time;
 /* CPU-specific state of this task */
 	struct thread_struct thread;
 /*
