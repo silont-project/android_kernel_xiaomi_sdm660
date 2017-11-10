@@ -2055,6 +2055,7 @@ struct task_struct {
 	} async_free;
 
 	atomic64_t *concurrent_active_time;
+	atomic64_t *concurrent_policy_time;
 /* CPU-specific state of this task */
 	struct thread_struct thread;
 /*
