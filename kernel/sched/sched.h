@@ -30,6 +30,8 @@ struct cpuidle_state;
 #define TASK_ON_RQ_MIGRATING	2
 
 extern __read_mostly int scheduler_running;
+extern unsigned int sched_capacity_margin_up[NR_CPUS];
+extern unsigned int sched_capacity_margin_down[NR_CPUS];
 
 extern unsigned long calc_load_update;
 extern atomic_long_t calc_load_tasks;
