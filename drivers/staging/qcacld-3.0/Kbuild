@@ -1,5 +1,9 @@
 # We can build either as part of a standalone Kernel build or as
 # an external module.  Determine which mechanism is being used
+
+# Treat -misleading-indentation errors as warnings.
+subdir-ccflags-y := $(call cc-disable-warning, misleading-indentation)
+
 ifeq ($(MODNAME),)
 	KERNEL_BUILD := 1
 else
