@@ -3598,6 +3598,7 @@ static inline unsigned long map_util_freq(unsigned long util,
 #ifdef CONFIG_DYNAMIC_STUNE_BOOST
 int do_stune_boost(char *st_name, int boost);
 int reset_stune_boost(char *st_name);
+int stune_boost(char *st_name);
 #endif /* CONFIG_DYNAMIC_STUNE_BOOST */
 
 #endif
