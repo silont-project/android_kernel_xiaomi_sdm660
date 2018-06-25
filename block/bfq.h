@@ -941,6 +941,14 @@ static struct bfq_queue *bfq_get_queue(struct bfq_data *bfqd,
 				       struct bfq_io_cq *bic);
 static void bfq_end_wr_async_queues(struct bfq_data *bfqd,
 				    struct bfq_group *bfqg);
+static void bfq_weights_tree_add(struct bfq_data *bfqd, struct bfq_entity *entity,
+			  struct rb_root *root);
+static void __bfq_weights_tree_remove(struct bfq_data *bfqd,
+			       struct bfq_entity *entity,
+			       struct rb_root *root);
+static void bfq_weights_tree_remove(struct bfq_data *bfqd,
+			     struct bfq_queue *bfqq);
+
 #ifdef CONFIG_BFQ_GROUP_IOSCHED
 static void bfq_put_async_queues(struct bfq_data *bfqd, struct bfq_group *bfqg);
 #endif
