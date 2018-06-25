@@ -1214,21 +1214,31 @@ static bool bfq_bfqq_update_budg_for_activation(struct bfq_data *bfqd,
 		 * remain unchanged after such an expiration, and the
 		 * following statement therefore assigns to
 		 * entity->budget the remaining budget on such an
-		 * expiration. For clarity, entity->service is not
-		 * updated on expiration in any case, and, in normal
-		 * operation, is reset only when bfqq is selected for
-		 * service (see bfq_get_next_queue).
+		 * expiration.
 		 */
 		BUG_ON(bfqq->max_budget < 0);
 		entity->budget = min_t(unsigned long,
 				       bfq_bfqq_budget_left(bfqq),
 				       bfqq->max_budget);
 
-		BUG_ON(entity->budget < 0);
+		/*
+		 * At this point, we have used entity->service to get
+		 * the budget left (needed for updating
+		 * entity->budget). Thus we finally can, and have to,
+		 * reset entity->service. The latter must be reset
+		 * because bfqq would otherwise be charged again for
+		 * the service it has received during its previous
+		 * service slot(s).
+		 */
+		entity->service = 0;
+
 		return true;
 	}
 
-	BUG_ON(bfqq->max_budget < 0);
+	/*
+	 * We can finally complete expiration, by setting service to 0.
+	 */
+	entity->service = 0;
 	entity->budget = max_t(unsigned long, bfqq->max_budget,
 			       bfq_serv_to_charge(bfqq->next_rq, bfqq));
 	BUG_ON(entity->budget < 0);
@@ -3272,15 +3282,21 @@ static void bfq_bfqq_expire(struct bfq_data *bfqd,
 	ref = bfqq->ref;
 	__bfq_bfqq_expire(bfqd, bfqq);
 
-	BUG_ON(ref > 1 &&
-	       !bfq_bfqq_busy(bfqq) && reason == BFQ_BFQQ_BUDGET_EXHAUSTED &&
-		!bfq_class_idle(bfqq));
+	if (ref == 1) /* bfqq is gone, no more actions on it */
+		return;
 
 	/* mark bfqq as waiting a request only if a bic still points to it */
-	if (ref > 1 && !bfq_bfqq_busy(bfqq) &&
-	    reason != BFQ_BFQQ_BUDGET_TIMEOUT &&
-	    reason != BFQ_BFQQ_BUDGET_EXHAUSTED)
+	if (!bfq_bfqq_busy(bfqq) &&
+	    reason != BFQQE_BUDGET_TIMEOUT &&
+	    reason != BFQQE_BUDGET_EXHAUSTED) {
 		bfq_mark_bfqq_non_blocking_wait_rq(bfqq);
+		/*
+		 * Not setting service to 0, because, if the next rq
+		 * arrives in time, the queue will go on receiving
+		 * service with this same budget (as if it never expired)
+		 */
+	} else
+		entity->service = 0;
 }
 
 /*
