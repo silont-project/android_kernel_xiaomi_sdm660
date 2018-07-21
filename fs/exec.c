@@ -285,7 +285,7 @@ static int __bprm_mm_init(struct linux_binprm *bprm)
 	struct vm_area_struct *vma = NULL;
 	struct mm_struct *mm = bprm->mm;
 
-	bprm->vma = vma = kmem_cache_zalloc(vm_area_cachep, GFP_KERNEL);
+	bprm->vma = vma = vm_area_alloc();
 	if (!vma)
 		return -ENOMEM;
 
@@ -317,7 +317,7 @@ static int __bprm_mm_init(struct linux_binprm *bprm)
 err:
 	up_write(&mm->mmap_sem);
 	bprm->vma = NULL;
-	kmem_cache_free(vm_area_cachep, vma);
+	vm_area_free(vma);
 	return err;
 }
 
