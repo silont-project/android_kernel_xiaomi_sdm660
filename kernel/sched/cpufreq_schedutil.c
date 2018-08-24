@@ -360,6 +360,7 @@ static unsigned int sugov_next_freq_shared(struct sugov_cpu *sg_cpu, u64 time)
 
 		j_util = j_sg_cpu->util;
 		j_max = j_sg_cpu->max;
+		busy |= sugov_cpu_is_busy(j_sg_cpu);
 		if (j_util * max > j_max * util) {
 			util = j_util;
 			max = j_max;
