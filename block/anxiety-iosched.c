@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- * Anxiety I/O Scheduler
- *
+ * Anxiety IO Scheduler
  * Copyright (c) 2020, Tyler Nijmeh <tylernij@gmail.com>
  */
 
