@@ -115,3 +115,9 @@ SCHED_FEAT(MIN_CAPACITY_CAPPING, true)
  * OFF: Use whichever of target or backup saves most.
  */
 SCHED_FEAT(FBT_STRICT_ORDER, true)
+
+/*
+ * Use the Simplified Energy Model for EAS accounting only for
+ * active costs of CPUs.
+ */
+SCHED_FEAT(EAS_SIMPLIFIED_EM, true)
