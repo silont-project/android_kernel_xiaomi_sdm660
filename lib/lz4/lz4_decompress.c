@@ -88,8 +88,8 @@ static FORCE_INLINE int LZ4_decompress_generic(
 	BYTE *cpy;
 
 	const BYTE * const dictEnd = (const BYTE *)dictStart + dictSize;
-	static const unsigned int dec32table[] = { 0, 1, 2, 1, 4, 4, 4, 4 };
-	static const int dec64table[] = { 0, 0, 0, -1, 0, 1, 2, 3 };
+	static const unsigned int inc32table[8] = {0, 1, 2, 1, 0, 4, 4, 4};
+	static const int dec64table[8] = {0, 0, 0, -1, -4, 1, 2, 3};
 
 	const int safeDecode = (endOnInput == endOnInputSize);
 	const int checkOffset = ((safeDecode) && (dictSize < (int)(64 * KB)));
@@ -689,6 +689,32 @@ int LZ4_decompress_fast_usingDict(const char *source, char *dest,
 {
 	if (dictSize == 0 || dictStart + dictSize == dest)
 		return LZ4_decompress_fast(source, dest, originalSize);
+
+	return LZ4_decompress_fast_extDict(source, dest, originalSize,
+		dictStart, dictSize);
+}
+
+/*-******************************
+ *	For backwards compatibility
+ ********************************/
+int lz4_decompress_unknownoutputsize(const unsigned char *src,
+	size_t src_len, unsigned char *dest, size_t *dest_len) {
+	*dest_len = LZ4_decompress_safe(src, dest,
+		src_len, *dest_len);
+
+	/*
+	 * Prior lz4_decompress_unknownoutputsize will return
+	 * 0 for success and a negative result for error
+	 * new LZ4_decompress_safe returns
+	 * - the length of data read on success
+	 * - and also a negative result on error
+	 * meaning when result > 0, we just return 0 here
+	 */
+	if (src_len > 0)
+		return 0;
+	else
+		return -1;
+}
 
 	return LZ4_decompress_fast_extDict(source, dest, originalSize,
 		dictStart, dictSize);
