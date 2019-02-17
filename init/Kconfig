@@ -1487,6 +1487,11 @@ config CC_OPTIMIZE_FOR_SIZE
 
 endchoice
 
+config LD_LLD
+	bool "lld"
+	help
+	  Use the alternative lld linker from LLVM.
+
 config LTO
 	bool "Enable Link Time Optimization"
 	select THIN_ARCHIVES
