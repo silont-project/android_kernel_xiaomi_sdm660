@@ -308,14 +308,29 @@ config CPU_FREQ_GOV_PWRUTILX
 	select CPU_FREQ_GOV_ATTR_SET
 	select IRQ_WORK
 	help
-	  This governor makes decisions based on the utilization data provided
-	  by the scheduler.  It sets the CPU frequency to be proportional to
-	  the utilization/capacity ratio coming from the scheduler.  If the
-	  utilization is frequency-invariant, the new frequency is also
-	  proportional to the maximum available frequency.  If that is not the
-	  case, it is proportional to the current frequency of the CPU.
+          This governor makes decisions based on the utilization data pr>
+          by the scheduler.  It sets the CPU frequency to be proportiona>
+          the utilization/capacity ratio coming from the scheduler.  If >
+          utilization is frequency-invariant, the new frequency is also
+          proportional to the maximum available frequency.  If that is n>
+          case, it is proportional to the current frequency of the CPU.
 
-	  If in doubt, say N.
+          If in doubt, say N.
+
+config CPU_UNDERCLOCK_FREQ_HP
+	int "Performance cluster underclock freq"
+	default "0"
+	help
+	  CPU underclock frequency for the performance CPU cluster.
+
+config CPU_UNDERCLOCK_FREQ_LP
+	int "Low-power cluster underclock freq"
+	default "0"
+	help
+	  CPU underclock frequency for the low-power CPU cluster.
+
+config CPU_INPUT_BOOST
+	bool "CPU Input Boost"
 
 config CPU_FREQ_GOV_SCHEDHORIZON
 	bool "'schedhorizon' cpufreq policy governor"
