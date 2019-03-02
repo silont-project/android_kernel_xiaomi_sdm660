@@ -2927,6 +2927,9 @@ static struct attribute_group mdss_dsi_fs_attrs_group = {
 	.attrs = dynamic_bitclk_fs_attrs,
 };
 
+extern int trigger_cpufreq_underclock(void);
+extern int resume_cpufreq_underclock(void);
+
 static int mdss_dsi_event_handler(struct mdss_panel_data *pdata,
 				  int event, void *arg)
 {
@@ -2966,6 +2969,7 @@ static int mdss_dsi_event_handler(struct mdss_panel_data *pdata,
 	case MDSS_EVENT_LINK_READY:
 		/* The unblank notifier handles waking for unblank events */
 		mdss_dsi_display_wake(ctrl_pdata);
+		resume_cpufreq_underclock();
 		break;
 	case MDSS_EVENT_POST_PANEL_ON:
 		rc = mdss_dsi_post_panel_on(pdata);
@@ -2983,6 +2987,7 @@ static int mdss_dsi_event_handler(struct mdss_panel_data *pdata,
 		rc = mdss_dsi_off(pdata, power_state);
 		reinit_completion(&ctrl_pdata->wake_comp);
 		atomic_set(&ctrl_pdata->disp_en, MDSS_DISPLAY_OFF);
+		trigger_cpufreq_underclock();
 		break;
 	case MDSS_EVENT_DISABLE_PANEL:
 		/* disable esd thread */
