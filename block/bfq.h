@@ -393,11 +393,21 @@ struct bfq_io_cq {
 	 * field keeping the queue's belonging to a large burst
 	 */
 	bool saved_in_large_burst;
+
 	/*
 	 * True if the queue belonged to a burst list before its merge
 	 * with another cooperating queue.
 	 */
 	bool was_in_burst_list;
+
+	/*
+	 * Save the weight when a merge occurs, to be able
+	 * to restore it in case of split. If the weight is not
+	 * correctly resumed when the queue is recycled,
+	 * then the weight of the recycled queue could differ
+	 * from the weight of the original queue.
+	 */
+	unsigned int saved_weight;
 
 	/*
 	 * Similar to previous fields: save wr information.
