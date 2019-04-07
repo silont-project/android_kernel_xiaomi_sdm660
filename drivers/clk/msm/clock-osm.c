@@ -438,19 +438,14 @@ static inline int clk_osm_read_reg(struct clk_osm *c, u32 offset)
 	return readl_relaxed((char *)c->vbases[OSM_BASE] + offset);
 }
 
-static inline int clk_osm_read_reg_no_log(struct clk_osm *c, u32 offset)
-{
-	return readl_relaxed_no_log((char *)c->vbases[OSM_BASE] + offset);
-}
-
 static inline int clk_osm_mb(struct clk_osm *c, int base)
 {
-	return readl_relaxed_no_log((char *)c->vbases[base] + VERSION_REG);
+	return readl_relaxed((char *)c->vbases[base] + VERSION_REG);
 }
 
 static inline int clk_osm_acd_mb(struct clk_osm *c)
 {
-	return readl_relaxed_no_log((char *)c->vbases[ACD_BASE] +
+	return readl_relaxed((char *)c->vbases[ACD_BASE] +
 				    ACD_HW_VERSION);
 }
 
@@ -2680,6 +2675,38 @@ static struct clk *logical_cpu_to_clk(int cpu)
 
 fail:
 	return NULL;
+}
+
+static u64 clk_osm_get_cpu_cycle_counter(int cpu)
+{
+	struct clk_osm *c;
+	u32 val;
+	unsigned long flags;
+
+	if (logical_cpu_to_clk(cpu) == &pwrcl_clk.c)
+		c = &pwrcl_clk;
+	else if (logical_cpu_to_clk(cpu) == &perfcl_clk.c)
+		c = &perfcl_clk;
+	else {
+		pr_err("no clock device for CPU=%d\n", cpu);
+		return 0;
+	}
+
+	spin_lock_irqsave(&c->lock, flags);
+	val = clk_osm_read_reg(c, OSM_CYCLE_COUNTER_STATUS_REG);
+
+	if (val < c->prev_cycle_counter) {
+		/* Handle counter overflow */
+		c->total_cycle_counter += UINT_MAX -
+			c->prev_cycle_counter + val;
+		c->prev_cycle_counter = val;
+	} else {
+		c->total_cycle_counter += val - c->prev_cycle_counter;
+		c->prev_cycle_counter = val;
+	}
+	spin_unlock_irqrestore(&c->lock, flags);
+
+	return c->total_cycle_counter;
 }
 
 static void populate_opp_table(struct platform_device *pdev)
