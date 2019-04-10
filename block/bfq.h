@@ -987,6 +987,7 @@ static void __bfq_weights_tree_remove(struct bfq_data *bfqd,
 			       struct rb_root *root);
 static void bfq_weights_tree_remove(struct bfq_data *bfqd,
 			     struct bfq_queue *bfqq);
+static bool __bfq_bfqd_reset_in_service(struct bfq_data *bfqd);
 
 #ifdef CONFIG_BFQ_GROUP_IOSCHED
 static void bfq_put_async_queues(struct bfq_data *bfqd, struct bfq_group *bfqg);
