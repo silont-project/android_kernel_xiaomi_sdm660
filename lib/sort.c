@@ -17,7 +17,7 @@
  * is_aligned - is this pointer & size okay for word-wide copying?
  * @base: pointer to data
  * @size: size of each element
- * @align: required aignment (typically 4 or 8)
+ * @align: required alignment (typically 4 or 8)
  *
  * Returns true if elements can be copied using word loads and stores.
  * The size must be a multiple of the alignment, and the base address must
@@ -118,7 +118,33 @@ static void swap_bytes(void *a, void *b, int size)
 }
 
 /**
- * sort_r - sort an array of elements
+ * parent - given the offset of the child, find the offset of the parent.
+ * @i: the offset of the heap element whose parent is sought.  Non-zero.
+ * @lsbit: a precomputed 1-bit mask, equal to "size & -size"
+ * @size: size of each element
+ *
+ * In terms of array indexes, the parent of element j = @i/@size is simply
+ * (j-1)/2.  But when working in byte offsets, we can't use implicit
+ * truncation of integer divides.
+ *
+ * Fortunately, we only need one bit of the quotient, not the full divide.
+ * @size has a least significant bit.  That bit will be clear if @i is
+ * an even multiple of @size, and set if it's an odd multiple.
+ *
+ * Logically, we're doing "if (i & lsbit) i -= size;", but since the
+ * branch is unpredictable, it's done with a bit of clever branch-free
+ * code instead.
+ */
+__attribute_const__ __always_inline
+static size_t parent(size_t i, unsigned int lsbit, size_t size)
+{
+	i -= size;
+	i -= size & -(i & lsbit);
+	return i / 2;
+}
+
+/**
+ * sort - sort an array of elements
  * @base: pointer to data to sort
  * @num: number of elements
  * @size: size of each element
@@ -136,10 +162,9 @@ static void swap_bytes(void *a, void *b, int size)
  * O(n*n) worst-case behavior and extra memory requirements that make
  * it less suitable for kernel use.
  */
-void sort_r(void *base, size_t num, size_t size,
-	    int (*cmp_func)(const void *, const void *, const void *),
-	    void (*swap_func)(void *, void *, int size),
-	    const void *priv)
+void sort(void *base, size_t num, size_t size,
+	  int (*cmp_func)(const void *, const void *),
+	  void (*swap_func)(void *, void *, int size))
 {
 	/* pre-scale counters for performance */
 	size_t n = num * size, a = (num/2) * size;
@@ -170,7 +195,7 @@ void sort_r(void *base, size_t num, size_t size,
 		if (a)			/* Building heap: sift down --a */
 			a -= size;
 		else if (n -= size)	/* Sorting: Extract root to --n */
-			do_swap(base, base + n, size, swap_func);
+			swap_func(base, base + n, size);
 		else			/* Sort complete */
 			break;
 
@@ -187,27 +212,19 @@ void sort_r(void *base, size_t num, size_t size,
 		 * average, 3/4 worst-case.)
 		 */
 		for (b = a; c = 2*b + size, (d = c + size) < n;)
-			b = do_cmp(base + c, base + d, cmp_func, priv) >= 0 ? c : d;
+			b = cmp_func(base + c, base + d) >= 0 ? c : d;
 		if (d == n)	/* Special case last leaf with no sibling */
 			b = c;
 
 		/* Now backtrack from "b" to the correct location for "a" */
-		while (b != a && do_cmp(base + a, base + b, cmp_func, priv) >= 0)
+		while (b != a && cmp_func(base + a, base + b) >= 0)
 			b = parent(b, lsbit, size);
 		c = b;			/* Where "a" belongs */
 		while (b != a) {	/* Shift it into place */
 			b = parent(b, lsbit, size);
-			do_swap(base + b, base + c, size, swap_func);
+			swap_func(base + b, base + c, size);
 		}
 	}
-}
-EXPORT_SYMBOL(sort_r);
-
-void sort(void *base, size_t num, size_t size,
-	  int (*cmp_func)(const void *, const void *),
-	  void (*swap_func)(void *, void *, int size))
-{
-	return sort_r(base, num, size, _CMP_WRAPPER, swap_func, cmp_func);
 }
 EXPORT_SYMBOL(sort);
 
