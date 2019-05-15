@@ -3190,7 +3190,7 @@ static void _aead_aes_fb_stage1_ahash_complete(
 
 	/* compare icv */
 	if (err == 0) {
-		unsigned char tmp[ctx->authsize];
+		unsigned char tmp[SHA1_DIGEST_SIZE];
 
 		scatterwalk_map_and_copy(tmp, rctx->fb_aes_src,
 			req->cryptlen - ctx->authsize, ctx->authsize, 0);
@@ -3319,7 +3319,7 @@ static int _qcrypto_aead_aes_192_fallback(struct aead_request *req,
 
 		rc = crypto_ahash_digest(ahash_req);
 		if (rc == 0) {
-			unsigned char tmp[ctx->authsize];
+			unsigned char tmp[SHA1_DIGEST_SIZE];
 
 			/* compare icv */
 			scatterwalk_map_and_copy(tmp,
