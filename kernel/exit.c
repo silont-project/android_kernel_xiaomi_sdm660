@@ -392,7 +392,6 @@ static void exit_mm(struct task_struct *tsk)
 {
 	struct mm_struct *mm = tsk->mm;
 	struct core_state *core_state;
-	int mm_released;
 
 	exit_mm_release(tsk, mm);
 	if (!mm)
