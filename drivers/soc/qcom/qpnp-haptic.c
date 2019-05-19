@@ -319,6 +319,7 @@ struct qpnp_hap_lra_ares_cfg {
  *  @ base - base address
  *  @ act_type - actuator type
  *  @ wave_shape - waveform shape
+ *  @ wave_shape_haptic - waveform shape for haptic feedback (on touch at example)
  *  @ wave_samp - array of wave samples
  *  @ shadow_wave_samp - shadow array of wave samples
  *  @ brake_pat - pattern for active breaking
@@ -383,6 +384,7 @@ struct qpnp_hap {
 	u8			drive_period_code_min_limit_percent_variation;
 	u8				act_type;
 	u8				wave_shape;
+	u8				wave_shape_haptic;
 	u8				wave_samp[QPNP_HAP_WAV_SAMP_LEN];
 #ifdef CONFIG_MACH_LONGCHEER
 	u8				wave_samp_two[QPNP_HAP_WAV_SAMP_LEN];
@@ -2489,8 +2491,13 @@ static void qpnp_hap_worker(struct work_struct *work)
 {
 	struct qpnp_hap *hap = container_of(work, struct qpnp_hap,
 					 work);
-	u8 val = 0x00;
+	u8 val = 0x00, temp;
 	int rc;
+
+	if (hap->wave_shape != hap->wave_shape_haptic && hap->play_time_ms < 300){
+		temp = hap->wave_shape;
+		hap->wave_shape = hap->wave_shape_haptic;
+	}
 
 	if (hap->vcc_pon && hap->state && !hap->vcc_pon_enabled) {
 		rc = regulator_enable(hap->vcc_pon);
@@ -2522,6 +2529,9 @@ static void qpnp_hap_worker(struct work_struct *work)
 		else
 			hap->vcc_pon_enabled = false;
 	}
+
+	if (hap->wave_shape != hap->wave_shape_haptic)
+		hap->wave_shape = temp;
 }
 
 /* get time api to know the remaining time */
@@ -3030,6 +3040,23 @@ static int qpnp_hap_parse_dt(struct qpnp_hap *hap)
 		pr_err("Unable to read wav shape\n");
 		return rc;
 	}
+
+	hap->wave_shape_haptic = QPNP_HAP_WAV_SQUARE;
+        rc = of_property_read_string(pdev->dev.of_node,
+                        "qcom,wave-shape-haptic", &temp_str);
+        if (!rc) {
+                if (strcmp(temp_str, "sine") == 0)
+                        hap->wave_shape_haptic = QPNP_HAP_WAV_SINE;
+                else if (strcmp(temp_str, "square") == 0)
+                        hap->wave_shape_haptic = QPNP_HAP_WAV_SQUARE;
+                else {
+                        pr_err("Unsupported wav shape\n");
+                        return -EINVAL;
+                }
+        } else if (rc != -EINVAL) {
+                pr_err("Unable to read wav shape for haptic feedback\n");
+                return rc;
+        }
 
 	hap->wave_play_rate_us = QPNP_HAP_DEF_WAVE_PLAY_RATE_US;
 	rc = of_property_read_u32(pdev->dev.of_node,
