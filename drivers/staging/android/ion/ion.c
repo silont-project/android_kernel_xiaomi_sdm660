@@ -205,6 +205,15 @@ struct ion_buffer *__ion_alloc(struct ion_device *idev, size_t len,
 {
 	struct ion_buffer *buffer;
 	struct ion_heap *heap;
+	int ret;
+
+	/*
+	 * For now, we don't want to fault in pages individually since
+	 * clients are already doing manual cache maintenance. In
+	 * other words, the implicit caching infrastructure is in
+	 * place (in code) but should not be used.
+	 */
+	flags |= ION_FLAG_CACHED_NEEDS_SYNC;
 
 	len = PAGE_ALIGN(len);
 	if (!len)
