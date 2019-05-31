@@ -55,7 +55,7 @@
 #define pil_memset_io(d, c, count) memset_io(d, c, count)
 #endif
 
-#define PIL_NUM_DESC		10
+#define PIL_NUM_DESC		16
 #define NUM_OF_ENCRYPTED_KEY	3
 static void __iomem *pil_info_base;
 static void __iomem *pil_minidump_base;
