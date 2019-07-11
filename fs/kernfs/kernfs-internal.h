@@ -110,6 +110,9 @@ extern const struct file_operations kernfs_file_fops;
 
 void kernfs_drain_open_files(struct kernfs_node *kn);
 
+void __init init_kernfs_file_pool(void);
+void kernfs_unmap_bin_file(struct kernfs_node *kn);
+
 /*
  * symlink.c
  */
