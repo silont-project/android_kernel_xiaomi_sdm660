@@ -11,3 +11,10 @@ obj-$(CONFIG_ION_DUMMY) += ion_dummy_driver.o
 obj-$(CONFIG_ION_TEGRA) += tegra/
 obj-$(CONFIG_ION_MSM) += msm/
 obj-$(CONFIG_ION_MSM) += ion_system_secure_heap.o
+
+CFLAGS_ion_system_heap.o += -Wframe-larger-than=8192
+
+#TODO: remove me b/62058353
+# WE SHOULD FIX THIS ONE
+subdir-ccflags-y += \
+	-Wno-enum-conversion
