@@ -3647,12 +3647,6 @@ util_est_dequeue(struct cfs_rq *cfs_rq, struct task_struct *p, bool task_sleep)
 #define SKIP_CPUFREQ	0x0
 #define DO_ATTACH	0x0
 
-static inline int
-update_cfs_rq_load_avg(u64 now, struct cfs_rq *cfs_rq, bool update_freq)
-{
-	return 0;
-}
-
 static inline void update_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *se, int not_used1) {}
 
 static inline void remove_entity_load_avg(struct sched_entity *se) {}
@@ -11078,7 +11072,6 @@ static void detach_task_cfs_rq(struct task_struct *p)
 {
 	struct sched_entity *se = &p->se;
 	struct cfs_rq *cfs_rq = cfs_rq_of(se);
-	u64 now = cfs_rq_clock_task(cfs_rq);
 
 	if (!vruntime_normalized(p)) {
 		/*
@@ -11089,7 +11082,6 @@ static void detach_task_cfs_rq(struct task_struct *p)
 		se->vruntime -= cfs_rq->min_vruntime;
 	}
 
-	update_cfs_rq_load_avg(now, cfs_rq, false);
 	detach_entity_cfs_rq(se);
 }
 
@@ -11097,9 +11089,7 @@ static void attach_task_cfs_rq(struct task_struct *p)
 {
 	struct sched_entity *se = &p->se;
 	struct cfs_rq *cfs_rq = cfs_rq_of(se);
-	u64 now = cfs_rq_clock_task(cfs_rq);
 
-	update_cfs_rq_load_avg(now, cfs_rq, false);
 	attach_entity_cfs_rq(se);
 
 	if (!vruntime_normalized(p))
