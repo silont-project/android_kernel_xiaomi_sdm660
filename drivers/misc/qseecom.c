@@ -1,7 +1,7 @@
 /*
  * QTI Secure Execution Environment Communicator (QSEECOM) driver
  *
- * Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2018, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -2168,15 +2168,6 @@ static int __qseecom_reentrancy_process_incomplete_cmd(
 			status = QSEOS_RESULT_FAILURE;
 			goto err_resp;
 		}
-
-		if (ptr_svc->abort == 1) {
-			pr_debug("Service %d abort %d\n",
-						lstnr, ptr_svc->abort);
-			rc = -ENODEV;
-			status = QSEOS_RESULT_FAILURE;
-			goto err_resp;
-		}
-
 		pr_debug("waking up rcv_req_wq and waiting for send_resp_wq\n");
 
 		/* initialize the new signal mask with all signals*/
