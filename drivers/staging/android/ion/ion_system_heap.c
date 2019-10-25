@@ -352,7 +352,7 @@ static int ion_system_heap_allocate(struct ion_heap *heap,
 	struct list_head pages;
 	struct list_head pages_from_pool;
 	struct page_info *info, *tmp_info;
-	int i = 0;
+	int i = 0, j;
 	unsigned int nents_sync = 0;
 	unsigned long size_remaining = PAGE_ALIGN(size);
 	unsigned int max_order = orders[0];
@@ -425,7 +425,6 @@ static int ion_system_heap_allocate(struct ion_heap *heap,
 	}
 
 	i = 0;
-	sg = table->sgl;
 	sg_sync = table_sync.sgl;
 
 	/*
@@ -434,7 +433,7 @@ static int ion_system_heap_allocate(struct ion_heap *heap,
 	 * together while preserving the ordering of the pages (higher order
 	 * first).
 	 */
-	do {
+	for_each_sg(table->sgl, sg, table->nents, j) {
 		info = list_first_entry_or_null(&pages, struct page_info, list);
 		tmp_info = list_first_entry_or_null(&pages_from_pool,
 							struct page_info, list);
@@ -453,9 +452,7 @@ static int ion_system_heap_allocate(struct ion_heap *heap,
 		} else {
 			BUG();
 		}
-		sg = sg_next(sg);
-
-	} while (sg);
+	}
 
 	ret = msm_ion_heap_pages_zero(data.pages, data.size >> PAGE_SHIFT);
 	if (ret) {
