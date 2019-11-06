@@ -304,12 +304,17 @@ static const struct coresight_ops adreno_coresight_ops = {
 
 void adreno_coresight_remove(struct adreno_device *adreno_dev)
 {
+#ifdef CONFIG_CORESIGHT
 	coresight_unregister(adreno_dev->csdev);
 	adreno_dev->csdev = NULL;
+#else
+	return;
+#endif
 }
 
 int adreno_coresight_init(struct adreno_device *adreno_dev)
 {
+#ifdef CONFIG_CORESIGHT
 	int ret = 0;
 	struct adreno_gpudev *gpudev = ADRENO_GPU_DEVICE(adreno_dev);
 	struct kgsl_device *device = KGSL_DEVICE(adreno_dev);
@@ -341,4 +346,7 @@ int adreno_coresight_init(struct adreno_device *adreno_dev)
 		ret = PTR_ERR(adreno_dev->csdev);
 
 	return ret;
+#else
+	return 0;
+#endif
 }
