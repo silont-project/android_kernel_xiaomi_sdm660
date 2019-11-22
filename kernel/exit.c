@@ -51,6 +51,7 @@
 #include <trace/events/sched.h>
 #include <linux/hw_breakpoint.h>
 #include <linux/oom.h>
+#include <linux/oom_score_notifier.h>
 #include <linux/writeback.h>
 #include <linux/shm.h>
 #include <linux/kcov.h>
@@ -97,6 +98,9 @@ static void __exit_signal(struct task_struct *tsk)
 	spin_lock(&sighand->siglock);
 
 	posix_cpu_timers_exit(tsk);
+#ifdef CONFIG_OOM_SCORE_NOTIFIER
+	oom_score_notify_free(tsk);
+#endif
 	if (group_dead) {
 		posix_cpu_timers_exit_group(tsk);
 		tty = sig->tty;
@@ -443,7 +447,7 @@ static void exit_mm(struct task_struct *tsk)
 	mm_update_next_owner(mm);
 	mmput(mm);
 	if (test_thread_flag(TIF_MEMDIE))
-		exit_oom_victim();
+		exit_oom_victim(tsk);
 }
 static struct task_struct *find_alive_thread(struct task_struct *p)
 {
