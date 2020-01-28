@@ -311,8 +311,8 @@ return:
 int32_t CTP_I2C_READ(struct i2c_client *client, uint16_t address, uint8_t *buf, uint16_t len)
 {
 	struct i2c_msg msgs[2];
-	int32_t ret = -1;
-	uint8_t retries;
+	int32_t ret;
+	int32_t retries;
 
 	msgs[0].flags = !I2C_M_RD;
 	msgs[0].addr  = address;
@@ -326,10 +326,11 @@ int32_t CTP_I2C_READ(struct i2c_client *client, uint16_t address, uint8_t *buf, 
 
 	for (retries = 0; retries < 5; retries++) {
 		ret = i2c_transfer(client->adapter, msgs, 2);
-		if (ret == 2)
+		if (likely(ret == 2))
 			return ret;
 	}
 
+	NVT_ERR("i2c read error\n");
 	return -EIO;
 }
 
@@ -343,8 +344,8 @@ return:
 int32_t CTP_I2C_WRITE(struct i2c_client *client, uint16_t address, uint8_t *buf, uint16_t len)
 {
 	struct i2c_msg msg;
-	int32_t ret = -1;
-	uint8_t retries;
+	int32_t ret;
+	int32_t retries;
 
 	msg.flags = !I2C_M_RD;
 	msg.addr  = address;
@@ -353,10 +354,11 @@ int32_t CTP_I2C_WRITE(struct i2c_client *client, uint16_t address, uint8_t *buf,
 
 	for (retries = 0; retries < 5; retries++) {
 		ret = i2c_transfer(client->adapter, &msg, 1);
-		if (ret == 1)
+		if (likely(ret == 1))
 			return ret;
 	}
 
+	NVT_ERR("i2c write error\n");
 	return -EIO;
 }
 
