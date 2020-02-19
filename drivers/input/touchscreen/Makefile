@@ -110,3 +110,4 @@ obj-$(CONFIG_KERNEL_CUSTOM_E7S)	+= lct_ctp_selftest.o
 obj-$(CONFIG_KERNEL_CUSTOM_E7S)	+= lct_ctp_upgrade.o
 obj-$(CONFIG_KERNEL_CUSTOM_E7S)	+= lct_if_ctp_upgrade.o
 obj-$(CONFIG_KERNEL_CUSTOM_E7S)	+= lct_tp_gesture.o
+obj-$(CONFIG_TOUCHSCREEN_COMMON)	+= tp_common.o
