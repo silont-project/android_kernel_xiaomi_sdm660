@@ -254,9 +254,9 @@ int msm_sensor_match_vendor_id(struct msm_sensor_ctrl_t *s_ctrl)
 #elif defined(CONFIG_MACH_MI)
 	uint16_t moduleflag = 0;
 #endif
-#ifdef CONFIG_MACH_XIAOMI_LAVENDER
-    uint16_t lensid = 0;
-    int have_lensid = 0;
+#if defined CONFIG_MACH_XIAOMI_LAVENDER || defined CONFIG_MACH_XIAOMI_TULIP
+    	uint16_t lensid = 0;
+    	int have_lensid = 0;
 #endif
 	enum cci_i2c_master_t temp_master = MASTER_0;
 
@@ -440,7 +440,7 @@ int msm_sensor_match_vendor_id(struct msm_sensor_ctrl_t *s_ctrl)
 		s_ctrl->sensordata->vcm_id_info->data_type);
 		have_vcmid = 1;
 	}
-#ifdef CONFIG_MACH_XIAOMI_LAVENDER
+#if defined CONFIG_MACH_XIAOMI_LAVENDER || defined CONFIG_MACH_XIAOMI_TULIP
     if (s_ctrl->sensordata->lens_id_info->lens_id_addr != 0)
     {
         msm_camera_cci_i2c_read(
@@ -479,9 +479,7 @@ int msm_sensor_match_vendor_id(struct msm_sensor_ctrl_t *s_ctrl)
 					__func__, vcmid, s_ctrl->sensordata->vcm_id_info->vcm_id);
 			}
 		}
-<<<<<<< HEAD
-=======
-#ifdef CONFIG_MACH_XIAOMI_LAVENDER
+#if defined CONFIG_MACH_XIAOMI_LAVENDER || defined CONFIG_MACH_XIAOMI_TULIP
         if(have_lensid == 1)
         {
             if (s_ctrl->sensordata->lens_id_info->lens_id != lensid)
@@ -497,7 +495,6 @@ int msm_sensor_match_vendor_id(struct msm_sensor_ctrl_t *s_ctrl)
                        __func__, lensid, s_ctrl->sensordata->lens_id_info->lens_id);
             }
         }
->>>>>>> 4c54547e0f828 (camera: lavender: Fix new version)
 #endif
 	}
 	pr_err("%s: read vendor id: 0x%x expected id 0x%x:\n",
