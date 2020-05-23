@@ -360,6 +360,8 @@ static struct z3fold_header *init_z3fold_page(struct page *page, bool headless,
 	zhdr->first_num = 0;
 	zhdr->start_middle = 0;
 	zhdr->cpu = -1;
+	zhdr->foreign_handles = 0;
+	zhdr->mapped_count = 0;
 	zhdr->slots = slots;
 	zhdr->foreign_handles = 0;
 	zhdr->mapped_count = 0;
