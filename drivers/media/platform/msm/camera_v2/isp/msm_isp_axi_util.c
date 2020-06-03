@@ -1,4 +1,5 @@
 /* Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2019 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -20,7 +21,11 @@
 
 #define HANDLE_TO_IDX(handle) (handle & 0xFF)
 #define ISP_SOF_DEBUG_COUNT 0
+#ifdef CONFIG_PATCH_GCAM_FREEZE
+
+#else
 #define OTHER_VFE(vfe_id) (vfe_id == ISP_VFE0 ? ISP_VFE1 : ISP_VFE0)
+#endif
 
 static void msm_isp_reload_ping_pong_offset(
 		struct msm_vfe_axi_stream *stream_info);
@@ -29,6 +34,9 @@ static void __msm_isp_axi_stream_update(
 			struct msm_vfe_axi_stream *stream_info,
 			struct msm_isp_timestamp *ts);
 
+#ifdef CONFIG_PATCH_GCAM_FREEZE
+
+#else
 static int msm_isp_process_done_buf(struct vfe_device *vfe_dev,
 	struct msm_vfe_axi_stream *stream_info, struct msm_isp_buffer *buf,
 	struct timeval *time_stamp, uint32_t frame_id);
@@ -36,6 +44,8 @@ static void msm_isp_free_pending_buffer(
 	struct vfe_device *vfe_dev,
 	struct msm_vfe_axi_stream *stream_info,
 	struct msm_isp_timestamp *ts);
+#endif
+
 static int msm_isp_update_stream_bandwidth(
 		struct msm_vfe_axi_stream *stream_info, int enable);
 
@@ -618,8 +628,13 @@ static int msm_isp_composite_irq(struct vfe_device *vfe_dev,
  *
  * Returns void
  */
+
+#ifdef CONFIG_PATCH_GCAM_FREEZE
+static void msm_isp_update_framedrop_reg(struct msm_vfe_axi_stream *stream_info)
+#else
 static void msm_isp_update_framedrop_reg(struct msm_vfe_axi_stream *stream_info,
 		uint32_t drop_reconfig)
+#endif
 {
 	if (stream_info->stream_type == BURST_STREAM) {
 		if (stream_info->runtime_num_burst_capture == 0 ||
@@ -679,6 +694,9 @@ void msm_isp_process_reg_upd_epoch_irq(struct vfe_device *vfe_dev,
 		case MSM_ISP_COMP_IRQ_REG_UPD:
 			stream_info->activated_framedrop_period =
 				stream_info->requested_framedrop_period;
+#ifdef CONFIG_PATCH_GCAM_FREEZE
+
+#else
 			/* Free Pending Buffers which are backed-up due to
 			 * delay in RUP from userspace to Avoid pageFault
 			 */
@@ -686,6 +704,14 @@ void msm_isp_process_reg_upd_epoch_irq(struct vfe_device *vfe_dev,
 			__msm_isp_axi_stream_update(stream_info, ts);
 			break;
 		case MSM_ISP_COMP_IRQ_EPOCH:
+#endif
+			__msm_isp_axi_stream_update(stream_info, ts);
+			break;
+		case MSM_ISP_COMP_IRQ_EPOCH:
+#ifdef CONFIG_PATCH_GCAM_FREEZE
+			if (stream_info->state == ACTIVE)
+				msm_isp_update_framedrop_reg(stream_info);
+#else
 			if (stream_info->state == ACTIVE) {
 				struct vfe_device *temp = NULL;
 				struct msm_vfe_common_dev_data *c_data;
@@ -702,6 +728,7 @@ void msm_isp_process_reg_upd_epoch_irq(struct vfe_device *vfe_dev,
 				msm_isp_update_framedrop_reg(stream_info,
 					drop_reconfig);
 			}
+#endif
 			break;
 		default:
 			WARN(1, "Invalid irq %d\n", irq);
@@ -1567,6 +1594,9 @@ static void msm_isp_axi_stream_enable_cfg(
 	}
 }
 
+#ifdef CONFIG_PATCH_GCAM_FREEZE
+
+#else
 static void msm_isp_free_pending_buffer(
 			struct vfe_device *vfe_dev,
 			struct msm_vfe_axi_stream *stream_info,
@@ -1600,6 +1630,7 @@ static void msm_isp_free_pending_buffer(
 		}
 	}
 }
+#endif
 
 static void __msm_isp_axi_stream_update(
 			struct msm_vfe_axi_stream *stream_info,
@@ -2066,8 +2097,12 @@ static int msm_isp_cfg_ping_pong_address(
 
 	if (!buf) {
 		msm_isp_cfg_stream_scratch(stream_info, pingpong_status);
+#ifdef CONFIG_PATCH_GCAM_FREEZE
+
+#else
 		if (stream_info->controllable_output)
 			return 1;
+#endif
 		return 0;
 	}
 
@@ -2483,7 +2518,11 @@ static void msm_isp_input_enable(struct vfe_device *vfe_dev,
 			continue;
 		/* activate the input since it is deactivated */
 		axi_data->src_info[i].frame_id = 0;
+#ifdef CONFIG_PATCH_GCAM_FREEZE
+
+#else
 		vfe_dev->irq_sof_id = 0;
+#endif
 		if (axi_data->src_info[i].input_mux != EXTERNAL_READ)
 			axi_data->src_info[i].active = 1;
 		if (i >= VFE_RAW_0 && sync_frame_id_src) {
@@ -2740,11 +2779,19 @@ int msm_isp_axi_reset(struct vfe_device *vfe_dev,
 	struct msm_isp_timestamp timestamp;
 	struct msm_vfe_frame_request_queue *queue_req;
 	unsigned long flags;
+#ifdef CONFIG_PATCH_GCAM_FREEZE
+
+#else
 	uint32_t pingpong_status;
+#endif
 	int vfe_idx;
+#ifdef CONFIG_PATCH_GCAM_FREEZE
+
+#else
 	uint32_t pingpong_bit = 0;
 	uint32_t frame_id = 0;
 	struct timeval *time_stamp;
+#endif
 
 	if (!reset_cmd) {
 		pr_err("%s: NULL pointer reset cmd %pK\n", __func__, reset_cmd);
@@ -2753,7 +2800,11 @@ int msm_isp_axi_reset(struct vfe_device *vfe_dev,
 	}
 
 	msm_isp_get_timestamp(&timestamp, vfe_dev);
+#ifdef CONFIG_PATCH_GCAM_FREEZE
+
+#else
 	time_stamp = &timestamp.buf_time;
+#endif
 
 	for (i = 0; i < VFE_AXI_SRC_MAX; i++) {
 		stream_info = msm_isp_get_stream_common_data(
@@ -2776,6 +2827,9 @@ int msm_isp_axi_reset(struct vfe_device *vfe_dev,
 
 		/* set ping pong to scratch before flush */
 		spin_lock_irqsave(&stream_info->lock, flags);
+#ifdef CONFIG_PATCH_GCAM_FREEZE
+
+#else
 		frame_id = vfe_dev->axi_data.src_info[VFE_PIX_0].frame_id;
 		if (stream_info->controllable_output &&
 			stream_info->undelivered_request_cnt > 0) {
@@ -2798,6 +2852,7 @@ int msm_isp_axi_reset(struct vfe_device *vfe_dev,
 						frame_id);
 			}
 		}
+#endif
 		msm_isp_cfg_stream_scratch(stream_info,
 					VFE_PING_FLAG);
 		msm_isp_cfg_stream_scratch(stream_info,
@@ -2849,7 +2904,11 @@ int msm_isp_axi_reset(struct vfe_device *vfe_dev,
 			axi_data->src_info[SRC_TO_INTF(stream_info->
 				stream_src)].frame_id =
 				reset_cmd->frame_id;
+#ifdef CONFIG_PATCH_GCAM_FREEZE
+
+#else
 			temp_vfe_dev->irq_sof_id = reset_cmd->frame_id;
+#endif
 		}
 		msm_isp_reset_burst_count_and_frame_drop(
 			vfe_dev, stream_info);
@@ -3122,12 +3181,16 @@ static void __msm_isp_stop_axi_streams(struct vfe_device *vfe_dev,
 		msm_isp_cfg_stream_scratch(stream_info, VFE_PING_FLAG);
 		msm_isp_cfg_stream_scratch(stream_info, VFE_PONG_FLAG);
 		stream_info->undelivered_request_cnt = 0;
+#ifdef CONFIG_PATCH_GCAM_FREEZE
+
+#else
 		if (stream_info->controllable_output &&
 			stream_info->pending_buf_info.is_buf_done_pending) {
 			msm_isp_free_pending_buffer(vfe_dev, stream_info,
 				&timestamp);
 			stream_info->pending_buf_info.is_buf_done_pending = 0;
 		}
+#endif
 		for (k = 0; k < stream_info->num_isp; k++) {
 			vfe_dev = stream_info->vfe_dev[k];
 			if (stream_info->num_planes > 1)
@@ -3306,8 +3369,14 @@ static int msm_isp_start_axi_stream(struct vfe_device *vfe_dev_ioctl,
 		msm_isp_reset_framedrop(vfe_dev_ioctl, stream_info);
 		rc = msm_isp_init_stream_ping_pong_reg(stream_info);
 		if (rc < 0) {
+#ifdef CONFIG_PATCH_GCAM_FREEZE
+			pr_err("%s: No buffer for stream%d\n", __func__,
+				HANDLE_TO_IDX(
+				stream_cfg_cmd->stream_handle[i]));
+#else
 			pr_err("%s: No buffer for stream%x\n", __func__,
 				stream_info->stream_id);
+#endif
 			spin_unlock_irqrestore(&stream_info->lock, flags);
 			mutex_unlock(&vfe_dev_ioctl->buf_mgr->lock);
 			goto error;
@@ -3634,6 +3703,7 @@ static int msm_isp_request_frame(struct vfe_device *vfe_dev,
 	/*
 	 * If frame_id = 1 then no eof check is needed
 	 */
+#ifdef CONFIG_PATCH_GCAM_FREEZE
 	if (vfe_dev->axi_data.src_info[frame_src].active &&
 		frame_src == VFE_PIX_0 &&
 		vfe_dev->axi_data.src_info[frame_src].accept_frame == false &&
@@ -3672,6 +3742,40 @@ static int msm_isp_request_frame(struct vfe_device *vfe_dev,
 			vfe_dev->axi_data.src_info[frame_src].active);
 		goto error;
 	}
+#else
+	if (vfe_dev->axi_data.src_info[frame_src].active &&
+		frame_src == VFE_PIX_0 &&
+		vfe_dev->axi_data.src_info[frame_src].accept_frame == false &&
+		(stream_info->undelivered_request_cnt <=
+			MAX_BUFFERS_IN_HW)
+		) {
+		pr_debug("%s:%d invalid time to request frame %d try drop_reconfig\n",
+			__func__, __LINE__, frame_id);
+		vfe_dev->isp_page->drop_reconfig = 1;
+		return 0;
+	} else if ((vfe_dev->axi_data.src_info[frame_src].active) &&
+			((frame_id ==
+			vfe_dev->axi_data.src_info[frame_src].frame_id) ||
+			(frame_id == vfe_dev->irq_sof_id)) &&
+			(stream_info->undelivered_request_cnt <=
+				MAX_BUFFERS_IN_HW)) {
+		vfe_dev->isp_page->drop_reconfig = 1;
+		pr_debug("%s: vfe_%d request_frame %d cur frame id %d pix %d try drop_reconfig\n",
+			__func__, vfe_dev->pdev->id, frame_id,
+			vfe_dev->axi_data.src_info[VFE_PIX_0].frame_id,
+			vfe_dev->axi_data.src_info[VFE_PIX_0].active);
+		return 0;
+	} else if ((vfe_dev->axi_data.src_info[frame_src].active && (frame_id !=
+		vfe_dev->axi_data.src_info[frame_src].frame_id + vfe_dev->
+		axi_data.src_info[frame_src].sof_counter_step)) ||
+		((!vfe_dev->axi_data.src_info[frame_src].active))) {
+		pr_debug("%s:%d invalid frame id %d cur frame id %d pix %d\n",
+			__func__, __LINE__, frame_id,
+			vfe_dev->axi_data.src_info[frame_src].frame_id,
+			vfe_dev->axi_data.src_info[frame_src].active);
+		goto error;
+	}
+#endif
 	if (stream_info->undelivered_request_cnt >= MAX_BUFFERS_IN_HW) {
 		pr_debug("%s:%d invalid undelivered_request_cnt %d frame id %d\n",
 			__func__, __LINE__,
@@ -3693,7 +3797,7 @@ static int msm_isp_request_frame(struct vfe_device *vfe_dev,
 			__func__, __LINE__, vfe_dev->pdev->id, frame_id,
 			stream_info->activated_framedrop_period,
 			stream_info->stream_id);
-#ifdef CONFIG_MACH_XIAOMI_JASON
+#if defined CONFIG_MACH_XIAOMI_JASON || defined CONFIG_PATCH_GCAM_FREEZE
 		rc = msm_isp_return_empty_buffer(vfe_dev, stream_info,
 			user_stream_id, frame_id, buf_index, frame_src);
 		if (rc < 0)
@@ -3775,6 +3879,13 @@ static int msm_isp_request_frame(struct vfe_device *vfe_dev,
 		if (rc) {
 			spin_unlock_irqrestore(&stream_info->lock, flags);
 			stream_info->undelivered_request_cnt--;
+#ifdef CONFIG_PATCH_GCAM_FREEZE
+			pr_err_ratelimited("%s:%d fail to cfg HAL buffer\n",
+				__func__, __LINE__);
+			queue_req->cmd_used = 0;
+			list_del(&queue_req->list);
+			stream_info->request_q_cnt--;
+#else
 			queue_req = list_first_entry_or_null(
 				&stream_info->request_q,
 				struct msm_vfe_frame_request_queue, list);
@@ -3785,6 +3896,7 @@ static int msm_isp_request_frame(struct vfe_device *vfe_dev,
 			}
 			pr_err_ratelimited("%s:%d fail to cfg HAL buffer stream %x\n",
 				__func__, __LINE__, stream_info->stream_id);
+#endif
 			return rc;
 		}
 
@@ -3821,6 +3933,9 @@ static int msm_isp_request_frame(struct vfe_device *vfe_dev,
 			stream_info->undelivered_request_cnt--;
 			spin_unlock_irqrestore(&stream_info->lock,
 						flags);
+#ifdef CONFIG_PATCH_GCAM_FREEZE
+
+#else
 			queue_req = list_first_entry_or_null(
 				&stream_info->request_q,
 				struct msm_vfe_frame_request_queue, list);
@@ -3829,6 +3944,7 @@ static int msm_isp_request_frame(struct vfe_device *vfe_dev,
 				list_del(&queue_req->list);
 				stream_info->request_q_cnt--;
 			}
+#endif
 			pr_err_ratelimited("%s:%d fail to cfg HAL buffer\n",
 				__func__, __LINE__);
 			return rc;
@@ -4318,8 +4434,12 @@ void msm_isp_process_axi_irq_stream(struct vfe_device *vfe_dev,
 	struct timeval *time_stamp;
 	uint32_t frame_id, buf_index = -1;
 	int vfe_idx;
+#ifdef CONFIG_PATCH_GCAM_FREEZE
+
+#else
 	struct vfe_device *temp_dev;
 	int other_vfe_id;
+#endif
 
 	if (!ts) {
 		pr_err("%s: Error! Invalid argument\n", __func__);
@@ -4417,6 +4537,9 @@ void msm_isp_process_axi_irq_stream(struct vfe_device *vfe_dev,
 			ISP_DBG("%s: Error configuring ping_pong\n",
 				__func__);
 	} else if (done_buf && (done_buf->is_drop_reconfig != 1)) {
+#ifdef CONFIG_PATCH_GCAM_FREEZE
+
+#else
 		int32_t frame_id_diff;
 		/* irq_sof should be always >= tasklet SOF id
 		 * For dual camera usecase irq_sof could be behind
@@ -4437,6 +4560,7 @@ void msm_isp_process_axi_irq_stream(struct vfe_device *vfe_dev,
 				ISP_EVENT_PING_PONG_MISMATCH);
 			return;
 		}
+#endif
 		msm_isp_cfg_stream_scratch(stream_info, pingpong_status);
 	}
 	if (!done_buf) {
@@ -4445,6 +4569,9 @@ void msm_isp_process_axi_irq_stream(struct vfe_device *vfe_dev,
 				stream_info->bufq_handle[
 				VFE_BUF_QUEUE_DEFAULT] & 0xFF]++;
 			vfe_dev->error_info.framedrop_flag = 1;
+#ifdef CONFIG_PATCH_GCAM_FREEZE
+
+#else
 			if (vfe_dev->is_split) {
 				other_vfe_id = OTHER_VFE(vfe_dev->pdev->id);
 				temp_dev =
@@ -4455,6 +4582,7 @@ void msm_isp_process_axi_irq_stream(struct vfe_device *vfe_dev,
 				VFE_BUF_QUEUE_DEFAULT] & 0xFF]++;
 				temp_dev->error_info.framedrop_flag = 1;
 			}
+#endif
 
 		}
 		spin_unlock_irqrestore(&stream_info->lock, flags);
@@ -4498,13 +4626,20 @@ void msm_isp_process_axi_irq_stream(struct vfe_device *vfe_dev,
 	* then dont issue buf-done for current buffer
 	*/
 		done_buf->is_drop_reconfig = 0;
+#ifdef CONFIG_PATCH_GCAM_FREEZE
+
+#else
 		if (!stream_info->buf[pingpong_bit]) {
 			/* samebuffer is not re-programeed so write scratch */
 			msm_isp_cfg_stream_scratch(stream_info,
 				pingpong_status);
 		}
+#endif
 		spin_unlock_irqrestore(&stream_info->lock, flags);
 	} else {
+#ifdef CONFIG_PATCH_GCAM_FREEZE
+
+#else
 		/* If there is no regupdate from userspace then dont
 		 * free buffer immediately, delegate it to RegUpdateAck
 		 */
@@ -4515,11 +4650,17 @@ void msm_isp_process_axi_irq_stream(struct vfe_device *vfe_dev,
 			stream_info->pending_buf_info.buf = done_buf;
 			stream_info->pending_buf_info.frame_id = frame_id;
 		}
+#endif
 		spin_unlock_irqrestore(&stream_info->lock, flags);
+#ifdef CONFIG_PATCH_GCAM_FREEZE
+		msm_isp_process_done_buf(vfe_dev, stream_info,
+			done_buf, time_stamp, frame_id);
+#else
 		if (stream_info->pending_buf_info.is_buf_done_pending != 1) {
 			msm_isp_process_done_buf(vfe_dev, stream_info,
 				done_buf, time_stamp, frame_id);
 		}
+#endif
 	}
 }
 
