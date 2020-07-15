@@ -49,37 +49,56 @@
 /* Macro for constructing the REGDMA command */
 #define SDE_REGDMA_WRITE(p, off, data) \
 	do { \
-		writel_relaxed(REGDMA_OP_REGWRITE | \
-			((off) & REGDMA_ADDR_OFFSET_MASK), (p)); \
-		(p)++; \
-		writel_relaxed((data), (p)); \
-		(p)++; \
+		SDEROT_DBG("SDEREG.W:[%s:0x%X] <= 0x%X\n", #off, (off),\
+				(u32)(data));\
+		writel_relaxed( \
+				(REGDMA_OP_REGWRITE | \
+				 ((off) & REGDMA_ADDR_OFFSET_MASK)), \
+				p); \
+		p += sizeof(u32); \
+		writel_relaxed(data, p); \
+		p += sizeof(u32); \
 	} while (0)
 
 #define SDE_REGDMA_MODIFY(p, off, mask, data) \
 	do { \
-		writel_relaxed(REGDMA_OP_REGMODIFY | \
-			((off) & REGDMA_ADDR_OFFSET_MASK), (p)); \
-		(p)++; \
-		writel_relaxed((mask), (p)); \
-		(p)++; \
-		writel_relaxed((data), (p)); \
-		(p)++; \
+		SDEROT_DBG("SDEREG.M:[%s:0x%X] <= 0x%X\n", #off, (off),\
+				(u32)(data));\
+		writel_relaxed( \
+				(REGDMA_OP_REGMODIFY | \
+				 ((off) & REGDMA_ADDR_OFFSET_MASK)), \
+				p); \
+		p += sizeof(u32); \
+		writel_relaxed(mask, p); \
+		p += sizeof(u32); \
+		writel_relaxed(data, p); \
+		p += sizeof(u32); \
 	} while (0)
 
 #define SDE_REGDMA_BLKWRITE_INC(p, off, len) \
 	do { \
-		writel_relaxed(REGDMA_OP_BLKWRITE_INC | \
-			((off) & REGDMA_ADDR_OFFSET_MASK), (p)); \
-		(p)++; \
-		writel_relaxed((len), (p)); \
-		(p)++; \
+		SDEROT_DBG("SDEREG.B:[%s:0x%X:0x%X]\n", #off, (off),\
+				(u32)(len));\
+		writel_relaxed( \
+				(REGDMA_OP_BLKWRITE_INC | \
+				 ((off) & REGDMA_ADDR_OFFSET_MASK)), \
+				p); \
+		p += sizeof(u32); \
+		writel_relaxed(len, p); \
+		p += sizeof(u32); \
 	} while (0)
 
 #define SDE_REGDMA_BLKWRITE_DATA(p, data) \
 	do { \
-		writel_relaxed((data), (p)); \
-		(p)++; \
+		SDEROT_DBG("SDEREG.I:[:] <= 0x%X\n", (u32)(data));\
+		writel_relaxed(data, p); \
+		p += sizeof(u32); \
+	} while (0)
+
+#define SDE_REGDMA_READ(p, data) \
+	do { \
+		data = readl_relaxed(p); \
+		p += sizeof(u32); \
 	} while (0)
 
 /* Macro for directly accessing mapped registers */
@@ -869,8 +888,8 @@ static u32 sde_hw_rotator_start_no_regdma(struct sde_hw_rotator_context *ctx,
 	SDEROT_DBG("BEGIN %d\n", ctx->timestamp);
 	/* Write all command stream to Rotator blocks */
 	/* Rotator will start right away after command stream finish writing */
-	while (rdptr < wrptr) {
-		u32 op = REGDMA_OP_MASK & *rdptr;
+	while (mem_rdptr < wrptr) {
+		u32 op = REGDMA_OP_MASK & readl_relaxed(mem_rdptr);
 
 		switch (op) {
 		case REGDMA_OP_NOP:
