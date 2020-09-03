@@ -585,18 +585,7 @@ ext4_xattr_release_block(handle_t *handle, struct inode *inode,
 				 EXT4_FREE_BLOCKS_METADATA |
 				 EXT4_FREE_BLOCKS_FORGET);
 	} else {
-		ref--;
-		BHDR(bh)->h_refcount = cpu_to_le32(ref);
-		if (ref == EXT4_XATTR_REFCOUNT_MAX - 1) {
-			struct mb_cache_entry *ce;
-
-			ce = mb_cache_entry_get(ext4_mb_cache, hash,
-						bh->b_blocknr);
-			if (ce) {
-				ce->e_reusable = 1;
-				mb_cache_entry_put(ext4_mb_cache, ce);
-			}
-		}
+		le32_add_cpu(&BHDR(bh)->h_refcount, -1);
 
 		ext4_xattr_block_csum_set(inode, bh);
 		/*
