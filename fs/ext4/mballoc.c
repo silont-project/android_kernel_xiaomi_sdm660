@@ -2879,9 +2879,9 @@ int __init ext4_init_mballoc(void)
 	if (ext4_pspace_cachep == NULL)
 		return -ENOMEM;
 
-	ext4_ac_cachep = KMEM_CACHE(ext4_allocation_context,
+	ext4_pspace_cachep = KMEM_CACHE(ext4_allocation_context,
 				    SLAB_RECLAIM_ACCOUNT);
-	if (ext4_ac_cachep == NULL) {
+	if (ext4_pspace_cachep == NULL) {
 		kmem_cache_destroy(ext4_pspace_cachep);
 		return -ENOMEM;
 	}
@@ -2890,7 +2890,7 @@ int __init ext4_init_mballoc(void)
 					   SLAB_RECLAIM_ACCOUNT);
 	if (ext4_free_data_cachep == NULL) {
 		kmem_cache_destroy(ext4_pspace_cachep);
-		kmem_cache_destroy(ext4_ac_cachep);
+		kmem_cache_destroy(ext4_pspace_cachep);
 		return -ENOMEM;
 	}
 	return 0;
@@ -4514,7 +4514,7 @@ ext4_fsblk_t ext4_mb_new_blocks(handle_t *handle,
 		}
 	}
 
-	ac = kmem_cache_zalloc(ext4_ac_cachep, GFP_NOFS);
+	ac = kmem_cache_zalloc(ext4_pspace_cachep, GFP_NOFS);
 	if (!ac) {
 		ar->len = 0;
 		*errp = -ENOMEM;
@@ -4574,7 +4574,7 @@ errout:
 	ext4_mb_release_context(ac);
 out:
 	if (ac)
-		kmem_cache_free(ext4_ac_cachep, ac);
+		kmem_cache_free(ext4_pspace_cachep, ac);
 	if (inquota && ar->len < inquota)
 		dquot_free_block(ar->inode, EXT4_C2B(sbi, inquota - ar->len));
 	if (!ar->len) {
