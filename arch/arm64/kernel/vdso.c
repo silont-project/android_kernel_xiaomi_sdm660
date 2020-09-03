@@ -95,21 +95,7 @@ int aarch32_setup_vectors_page(struct linux_binprm *bprm, int uses_interp)
 	};
 	void *ret;
 
-	if (down_write_killable(&mm->mmap_sem))
-		return -EINTR;
-	addr = get_unmapped_area(NULL, 0, PAGE_SIZE, 0, 0);
-	if (IS_ERR_VALUE(addr)) {
-		ret = ERR_PTR(addr);
-		goto out;
-	}
-
-	ret = _install_special_mapping(mm, addr, PAGE_SIZE,
-				       VM_READ|VM_EXEC|
-				       VM_MAYREAD|VM_MAYWRITE|VM_MAYEXEC,
-				       &compat_vdso_spec[0]);
-	if (IS_ERR(ret))
-		goto out;
-
+	down_write(&mm->mmap_sem);
 	current->mm->context.vdso = (void *)addr;
 
 	/* Map vectors page at the high address. */
@@ -198,40 +184,16 @@ int arch_setup_additional_pages(struct linux_binprm *bprm,
 	ret = _install_special_mapping(mm, vdso_base, vdso_text_len,
 				       VM_READ|VM_EXEC|
 				       VM_MAYREAD|VM_MAYWRITE|VM_MAYEXEC,
-				       &mappings->code_mapping);
-	if (!IS_ERR(ret))
-		mm->context.vdso = (void *)vdso_base;
-	return PTR_ERR_OR_ZERO(ret);
-}
-
-#ifdef CONFIG_COMPAT
-#ifdef CONFIG_VDSO32
-int aarch32_setup_vectors_page(struct linux_binprm *bprm, int uses_interp)
-{
-	struct mm_struct *mm = current->mm;
-	void *ret;
-
-	if (down_write_killable(&mm->mmap_sem))
-		return -EINTR;
+				       &vdso_spec[1]);
+	if (IS_ERR(ret))
+		goto up_fail;
 
 
 	up_write(&mm->mmap_sem);
 	return 0;
 
-	return PTR_ERR_OR_ZERO(ret);
-}
-#endif /* CONFIG_VDSO32 */
-#endif /* CONFIG_COMPAT */
-
-int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
-{
-	struct mm_struct *mm = current->mm;
-	int ret;
-
-	if (down_write_killable(&mm->mmap_sem))
-		return -EINTR;
-
-	ret = vdso_setup(mm, &vdso_mappings);
+up_fail:
+	mm->context.vdso = NULL;
 	up_write(&mm->mmap_sem);
 	return PTR_ERR(ret);
 }
