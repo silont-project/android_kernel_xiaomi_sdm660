@@ -120,3 +120,7 @@ android/configs/android-*.cfg
 
 *.sh
 out/
+#
+#Ignoring Android.bp link file
+#
+Android.bp
