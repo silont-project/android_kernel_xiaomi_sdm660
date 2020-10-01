@@ -219,6 +219,98 @@ static ssize_t fts_gesture_buf_store(struct device *dev, struct device_attribute
     return -EPERM;
 }
 
+<<<<<<< HEAD
+=======
+static int fts_gesture_read(struct seq_file *file, void *v)
+{
+	seq_printf(file, "%d", fts_gesture_data.mode);
+	return 0;
+}
+
+static int fts_gesture_open(struct inode *inode, struct file *file)
+{
+	return single_open(file, fts_gesture_read, inode);
+}
+
+static ssize_t fts_gesture_write(struct file *file, const char __user *buf,
+			 size_t count, loff_t *ppos)
+{
+	uint8_t str;
+	if(copy_from_user(&str, buf, 1)); // ignore
+	fts_gesture_data.mode = (str == '1');
+	return 1;
+}
+
+ static const struct file_operations fts_gesture_fops = {
+	.owner = THIS_MODULE,
+	.open = fts_gesture_open,
+	.write = fts_gesture_write,
+	.release = single_release,
+	.read = seq_read,
+	.llseek = seq_lseek,
+};
+
+static ssize_t proc_tp_gesture_read(struct file *file,
+		char __user *buf, size_t size, loff_t *ppos)
+{
+	ssize_t cnt;
+	char *page = NULL;
+
+	page = kzalloc(1, GFP_KERNEL);
+	if (IS_ERR_OR_NULL(page))
+		return -ENOMEM;
+
+	cnt = sprintf(page, "%s", (fts_gesture_data.mode ? "1\n" : "0\n"));
+	cnt = simple_read_from_buffer(buf, size, ppos, page, cnt);
+
+	kfree(page);
+	return cnt;
+}
+
+static ssize_t proc_tp_gesture_write(struct file *file,
+		const char __user *buf, size_t size, loff_t *ppos)
+{
+	ssize_t cnt;
+	char *page = NULL;
+	unsigned int input = 0;
+
+	page = kzalloc(1, GFP_KERNEL);
+	if (IS_ERR_OR_NULL(page))
+		return -ENOMEM;
+
+	cnt = simple_write_to_buffer(page, 1, ppos, buf, size);
+	if (cnt <= 0) {
+		cnt = -EINVAL;
+		goto out_free;
+	}
+
+	if (sscanf(page, "%u", &input) != 1) {
+		cnt = -EINVAL;
+		goto out_free;
+	}
+
+	fts_gesture_data.mode = input;
+
+out_free:
+	kfree(page);
+	return cnt;
+}
+
+static const struct file_operations proc_tp_gesture_fops = {
+	.read		= proc_tp_gesture_read,
+	.write		= proc_tp_gesture_write,
+};
+
+static void proc_tp_entry_init(void)
+{
+	struct proc_dir_entry *proc_entry_tp;
+
+	proc_entry_tp = proc_create_data("tp_gesture", 0666, NULL, &proc_tp_gesture_fops, NULL);
+	if (IS_ERR_OR_NULL(proc_entry_tp))
+		pr_err("%s: add /proc/tp_gesture error!\n", __func__);
+}
+
+>>>>>>> c1772809b9a7d (input: touchscreen: bring back procfs tp_gesture from Xiaomi)
 #ifdef CONFIG_TOUCHSCREEN_COMMON
 static ssize_t double_tap_show(struct kobject *kobj,
                               struct kobj_attribute *attr, char *buf)
@@ -604,6 +696,11 @@ int fts_gesture_init(struct fts_ts_data *ts_data)
     __set_bit(KEY_GESTURE_Z, input_dev->keybit);
 
     fts_create_gesture_sysfs(client);
+<<<<<<< HEAD
+=======
+    proc_create("wake_node", 0666, NULL, &fts_gesture_fops);
+    proc_tp_entry_init();
+>>>>>>> c1772809b9a7d (input: touchscreen: bring back procfs tp_gesture from Xiaomi)
 
 #ifdef CONFIG_TOUCHSCREEN_COMMON
        ret = tp_common_set_double_tap_ops(&double_tap_ops);
