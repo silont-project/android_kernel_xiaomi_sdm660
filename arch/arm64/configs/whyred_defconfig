@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 4.4.239 Kernel Configuration
+# Linux/arm64 4.4.240 Kernel Configuration
 #
 CONFIG_ARM64=y
 CONFIG_64BIT=y
@@ -607,6 +607,7 @@ CONFIG_PM_AUTOSLEEP=y
 CONFIG_PM_WAKELOCKS=y
 CONFIG_PM_WAKELOCKS_LIMIT=0
 # CONFIG_PM_WAKELOCKS_GC is not set
+CONFIG_PM_WAKELOCKS_SENSOR_IND_HACK=y
 CONFIG_PM=y
 # CONFIG_PM_DEBUG is not set
 CONFIG_PM_OPP=y
