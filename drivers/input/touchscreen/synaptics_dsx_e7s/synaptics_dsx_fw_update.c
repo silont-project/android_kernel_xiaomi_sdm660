@@ -54,8 +54,6 @@
 
 #define DO_STARTUP_FW_UPDATE
 
-#define SYNAPTICS_LOCK_DOWN_INFO
-
 #ifdef DO_STARTUP_FW_UPDATE
 #ifdef CONFIG_FB
 #define WAIT_FOR_FB_READY
@@ -141,6 +139,7 @@
 #define ENTER_FLASH_PROG_WAIT_MS 20
 #define READ_CONFIG_WAIT_MS 20
 
+extern char g_lcd_id[128];
 int tp_flag = 0;
 
 static int fwu_do_reflash(void);
@@ -204,8 +203,10 @@ static ssize_t fwu_sysfs_guest_code_block_count_show(struct device *dev,
 static ssize_t fwu_sysfs_write_guest_code_store(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t count);
 
+#if defined(SYNAPTICS_LOCK_DOWN_INFO)
 static ssize_t fwu_sysfs_read_panel_color_show(struct device *dev,
 		struct device_attribute *attr, char *buf);
+#endif
 #ifdef SYNA_TDDI
 static ssize_t fwu_sysfs_write_lockdown_code_store(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t count);
@@ -834,9 +835,11 @@ static struct device_attribute attrs[] = {
 	__ATTR(writeguestcode, 0220,
 			synaptics_rmi4_show_error,
 			fwu_sysfs_write_guest_code_store),
+#if defined(SYNAPTICS_LOCK_DOWN_INFO)
 	__ATTR(panelcolor, 0444,
 			fwu_sysfs_read_panel_color_show,
 			NULL),
+#endif
 #ifdef SYNA_TDDI
 	__ATTR(lockdowncode, 0664,
 			fwu_sysfs_read_lockdown_code_show,
@@ -3946,6 +3949,7 @@ exit:
 	return retval;
 }
 
+#if defined(SYNAPTICS_LOCK_DOWN_INFO)
 static int fwu_do_read_customer_serialization_data(void)
 {
 	int ii;
@@ -4030,8 +4034,7 @@ exit:
 
 	return retval;
 }
-
-
+#endif
 
 #ifdef SYNA_TDDI
 static int fwu_do_read_tddi_lockdown_data(void)
@@ -4526,7 +4529,7 @@ static int fwu_start_reflash(void)
 	pr_notice("%s: Start of reflash process\n", __func__);
 
 	if (fwu->image == NULL) {
-		if ((tp_lockdown_info[0] == '4')&&(tp_lockdown_info[1]=='1')) {
+		if (strstr(g_lcd_id,"shenchao td4310") != NULL) {
 			retval = secure_memcpy(fwu->image_name, MAX_IMAGE_NAME_LEN,
 					FW_IMAGE_NAME_SHENCHAO, sizeof(FW_IMAGE_NAME_SHENCHAO),
 					sizeof(FW_IMAGE_NAME_SHENCHAO));
@@ -4739,10 +4742,7 @@ exit:
 			config_ver,
 			1);
 	printk("config_ver info =%02x\n",config_ver[0]);
-	memset(fw_version, 0, sizeof(fw_version));
-	sprintf(fw_version, "[FW]0x%02x,[IC]td4310", config_ver[0]);
-	if ((tp_lockdown_info[0] == '4')&&(tp_lockdown_info[1]=='1')) {
-		init_tp_fm_info(0, fw_version, "shenchao");
+	if (strstr(g_lcd_id,"shenchao td4310") != NULL) {
 		tp_flag = 1;
 	}else{
 		init_tp_fm_info(0, fw_version, "tianma");
@@ -5668,6 +5668,7 @@ exit:
 	return retval;
 }
 
+#if defined(SYNAPTICS_LOCK_DOWN_INFO)
 static ssize_t fwu_sysfs_read_panel_color_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
@@ -5700,6 +5701,7 @@ static ssize_t fwu_sysfs_read_panel_color_show(struct device *dev,
 
 	return ret;
 }
+#endif
 
 #ifdef SYNA_TDDI
 static ssize_t fwu_sysfs_read_lockdown_code_show(struct device *dev,
@@ -5882,6 +5884,7 @@ static int synaptics_rmi4_fwu_init(struct synaptics_rmi4_data *rmi4_data)
 			&fwu->fwu_work);
 #endif
 
+#if defined(SYNAPTICS_LOCK_DOWN_INFO)
 printk("before get_tddi_lockdown_data");
 
 	if(get_tddi_lockdown_data(lockdown, 20)<0){
@@ -5896,6 +5899,7 @@ printk("before get_tddi_lockdown_data");
 		{
 			printk("tpd, create_proc_entry ctp_lockdown_status_proc failed\n");
 		}
+#endif
 
 #ifdef F51_DISCRETE_FORCE
 	fwu_read_flash_status();
