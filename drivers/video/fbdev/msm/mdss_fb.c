@@ -2902,6 +2902,14 @@ static int mdss_fb_blank_sub(int blank_mode, struct fb_info *info,
 		cabc_movie_resume = true;
 		cabc_still_resume = true;
 		pr_debug("blank powerdown called\n");
+#ifdef CONFIG_KERNEL_CUSTOM_E7S
+        ce_resume = true;
+        cabc_resume = true;
+        srgb_resume = true;
+        gamma_resume = true;
+        cabc_movie_resume = true;
+        cabc_still_resume = true;
+#endif
 		ret = mdss_fb_blank_blank(mfd, req_power_state);
 		break;
 	}
