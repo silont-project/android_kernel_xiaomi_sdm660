@@ -1002,6 +1002,11 @@ static void crng_reseed(struct crng_state *crng, struct entropy_store *r)
 	}
 }
 
+static inline void crng_wait_ready(void)
+{
+	wait_event_interruptible(crng_init_wait, crng_ready());
+}
+
 static void _extract_crng(struct crng_state *crng,
 			  __u8 out[CHACHA20_BLOCK_SIZE])
 {
@@ -1647,10 +1652,7 @@ static void _warn_unseeded_randomness(const char *func_name, void *caller,
  * number of good random numbers, suitable for key generation, seeding
  * TCP sequence numbers, etc.  It does not rely on the hardware random
  * number generator.  For random bytes direct from the hardware RNG
- * (when available), use get_random_bytes_arch(). In order to ensure
- * that the randomness provided by this function is okay, the function
- * wait_for_random_bytes() should be called and return 0 at least once
- * at any point prior.
+ * (when available), use get_random_bytes_arch().
  */
 static void _get_random_bytes(void *buf, int nbytes)
 {
@@ -1681,24 +1683,6 @@ void get_random_bytes(void *buf, int nbytes)
 	_get_random_bytes(buf, nbytes);
 }
 EXPORT_SYMBOL(get_random_bytes);
-
-/*
- * Wait for the urandom pool to be seeded and thus guaranteed to supply
- * cryptographically secure random numbers. This applies to: the /dev/urandom
- * device, the get_random_bytes function, and the get_random_{u32,u64,int,long}
- * family of functions. Using any of these functions without first calling
- * this function forfeits the guarantee of security.
- *
- * Returns: 0 if the urandom pool has been seeded.
- *          -ERESTARTSYS if the function was interrupted by a signal.
- */
-int wait_for_random_bytes(void)
-{
-	if (likely(crng_ready()))
-		return 0;
-	return wait_event_interruptible(crng_init_wait, crng_ready());
-}
-EXPORT_SYMBOL(wait_for_random_bytes);
 
 /*
  * Add a callback function that will be invoked when the nonblocking
@@ -2058,8 +2042,6 @@ const struct file_operations urandom_fops = {
 SYSCALL_DEFINE3(getrandom, char __user *, buf, size_t, count,
 		unsigned int, flags)
 {
-	int ret;
-
 	if (flags & ~(GRND_NONBLOCK|GRND_RANDOM))
 		return -EINVAL;
 
@@ -2072,9 +2054,9 @@ SYSCALL_DEFINE3(getrandom, char __user *, buf, size_t, count,
 	if (!crng_ready()) {
 		if (flags & GRND_NONBLOCK)
 			return -EAGAIN;
-		ret = wait_for_random_bytes();
-		if (unlikely(ret))
-			return ret;
+		crng_wait_ready();
+		if (signal_pending(current))
+			return -ERESTARTSYS;
 	}
 	return urandom_read(NULL, buf, count, NULL);
 }
@@ -2233,9 +2215,10 @@ struct batched_entropy {
 };
 
 /*
- * Get a random word for internal kernel use only. The quality of the random
- * number is either as good as RDRAND or as good as /dev/urandom, with the
- * goal of being quite fast and not depleting entropy.
+ * Get a random word for internal kernel use only. Similar to urandom but
+ * with the goal of minimal entropy pool depletion. As a result, the random
+ * value is not cryptographically secure but for several uses the cost of
+ * depleting entropy is too high
  */
 static DEFINE_PER_CPU(struct batched_entropy, batched_entropy_u64) = {
 	.batch_lock	= __SPIN_LOCK_UNLOCKED(batched_entropy_u64.lock),
