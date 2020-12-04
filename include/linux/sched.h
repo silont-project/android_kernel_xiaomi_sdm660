@@ -1632,6 +1632,11 @@ struct task_struct {
 	u32 init_load_pct;
 	u64 last_sleep_ts;
 #endif
+
+#ifdef CONFIG_PELT_UTIL_HALFLIFE_16
+	bool low_latency;	/* Binder Low Latency */
+#endif
+
 #ifdef CONFIG_CGROUP_SCHED
 	struct task_group *sched_task_group;
 #endif

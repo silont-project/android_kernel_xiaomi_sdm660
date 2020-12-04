@@ -1047,7 +1047,7 @@ static void binder_wakeup_poll_threads_ilocked(struct binder_proc *proc,
 		thread = rb_entry(n, struct binder_thread, rb_node);
 		if (thread->looper & BINDER_LOOPER_STATE_POLL &&
 		    binder_available_for_proc_work_ilocked(thread)) {
-#ifdef CONFIG_SCHED_WALT
+#ifdef CONFIG_PELT_UTIL_HALFLIFE_16
 			if (thread->task && current->signal &&
 				(current->signal->oom_score_adj == 0) &&
 				(current->prio < DEFAULT_PRIO))
@@ -1112,7 +1112,7 @@ static void binder_wakeup_thread_ilocked(struct binder_proc *proc,
 	assert_spin_locked(&proc->inner_lock);
 
 	if (thread) {
-#ifdef CONFIG_SCHED_WALT
+#ifdef CONFIG_PELT_UTIL_HALFLIFE_16
 		if (thread->task && current->signal &&
 			(current->signal->oom_score_adj == 0) &&
 			(current->prio < DEFAULT_PRIO))
@@ -4535,7 +4535,7 @@ retry:
 		ptr += trsize;
 
 		trace_binder_transaction_received(t);
-#ifdef CONFIG_SCHED_WALT
+#ifdef CONFIG_PELT_UTIL_HALFLIFE_16
 		if (current->low_latency)
 			current->low_latency = false;
 #endif
