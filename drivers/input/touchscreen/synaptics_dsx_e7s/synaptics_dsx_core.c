@@ -138,40 +138,6 @@ static int synaptics_rmi4_reinit_device(struct synaptics_rmi4_data *rmi4_data);
 static int synaptics_rmi4_reset_device(struct synaptics_rmi4_data *rmi4_data,
 		bool rebuild);
 
-#if 1
-#define WAKEUP_OFF 4
-#define WAKEUP_ON 5
-
-int synaptics_gesture_switch(struct input_dev *dev, unsigned int type, unsigned int code, int value)
-{
-
-	unsigned int input ;
-	if (type == EV_SYN && code == SYN_CONFIG)
-	{ 
-		if (rmi4_data->suspend)
-		{
-			if ((value != WAKEUP_OFF) || synaptics_gesture_func_on)
-			{
-				gesture_delay = true;
-			}
-		}
-		if(value == WAKEUP_OFF){
-			synaptics_gesture_func_on = false;
-			printk("close double-click resume\n");
-			input = 0;
-		}else if(value == WAKEUP_ON) {
-			synaptics_gesture_func_on  = true;
-			printk("open double-click resume\n");
-			input = 1;
-		}
-	}
-	if (rmi4_data->f11_wakeup_gesture || rmi4_data->f12_wakeup_gesture)
-		rmi4_data->enable_wakeup_gesture = input;
-
-	return 0;
-}
-#endif
-
 #ifdef CONFIG_FB
 static int synaptics_rmi4_fb_notifier_cb(struct notifier_block *self,
 		unsigned long event, void *data);
