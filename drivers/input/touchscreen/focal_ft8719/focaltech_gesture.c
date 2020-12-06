@@ -219,8 +219,6 @@ static ssize_t fts_gesture_buf_store(struct device *dev, struct device_attribute
     return -EPERM;
 }
 
-<<<<<<< HEAD
-=======
 static int fts_gesture_read(struct seq_file *file, void *v)
 {
 	seq_printf(file, "%d", fts_gesture_data.mode);
@@ -304,7 +302,6 @@ static void proc_tp_entry_init(void)
 		pr_err("%s: add /proc/tp_gesture error!\n", __func__);
 }
 
->>>>>>> c1772809b9a7d (input: touchscreen: bring back procfs tp_gesture from Xiaomi)
 #ifdef CONFIG_TOUCHSCREEN_COMMON
 static ssize_t double_tap_show(struct kobject *kobj,
                               struct kobj_attribute *attr, char *buf)
@@ -690,11 +687,8 @@ int fts_gesture_init(struct fts_ts_data *ts_data)
     __set_bit(KEY_GESTURE_Z, input_dev->keybit);
 
     fts_create_gesture_sysfs(client);
-<<<<<<< HEAD
-=======
     proc_create("wake_node", 0666, NULL, &fts_gesture_fops);
     proc_tp_entry_init();
->>>>>>> c1772809b9a7d (input: touchscreen: bring back procfs tp_gesture from Xiaomi)
 
 #ifdef CONFIG_TOUCHSCREEN_COMMON
        ret = tp_common_set_double_tap_ops(&double_tap_ops);
