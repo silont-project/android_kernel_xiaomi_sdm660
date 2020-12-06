@@ -60,6 +60,13 @@ static struct proc_dir_entry *NVT_proc_pwr_plug_switch_entry;
 
 /* add touchpad information by wanghan start */
 extern char g_lcd_id[128];
+static uint8_t tp_maker_cg_lamination = 0;
+static uint8_t display_maker = 0;
+static uint8_t cg_ink_color = 0;
+static uint8_t hw_version = 0;
+static uint8_t project_id = 0;
+static uint8_t cg_maker = 0;
+static uint8_t reservation_byte = 0;
 /* add touchpad information by wanghan end */
 
 /*******************************************************
@@ -614,7 +621,259 @@ static const struct file_operations nvt_diff_fops = {
 	.release = seq_release,
 };
 
+static int32_t nvt_get_oem_data(uint8_t *data, uint32_t flash_address, int32_t size)
+{
+	uint8_t buf[64] = {0};
+	uint8_t tmp_data[512] = {0};
+	int32_t count_256 = 0;
+	uint32_t cur_flash_addr = 0;
+	uint32_t cur_sram_addr = 0;
+	uint16_t checksum_get = 0;
+	uint16_t checksum_cal = 0;
+	int32_t i = 0;
+	int32_t j = 0;
+	int32_t ret = 0;
+	int32_t retry = 0;
+
+	LOG_ENTRY();
+	NVT_LOG("++\n");
+
+	// maximum 256 bytes each read
+	if (size % 256)
+		count_256 = size / 256 + 1;
+	else
+		count_256 = size / 256;
+
+get_oem_data_retry:
+	nvt_sw_reset_idle();
+
+	// check and stop crc reboot loop
+	nvt_stop_crc_reboot();
+
+	// Step 1: Initial BootLoader
+	ret = Init_BootLoader();
+	if (ret < 0) {
+		goto get_oem_data_out;
+	}
+
+	// Step 2: Resume PD
+	ret = Resume_PD();
+	if (ret < 0) {
+		goto get_oem_data_out;
+	}
+
+	// Step 3: Unlock
+	buf[0] = 0x00;
+	buf[1] = 0x35;
+	CTP_I2C_WRITE(ts->client, I2C_HW_Address, buf, 2);
+	msleep(10);
+
+	for (i = 0; i < count_256; i++) {
+		cur_flash_addr = flash_address + i * 256;
+		// Step 4: Flash Read Command
+		buf[0] = 0x00;
+		buf[1] = 0x03;
+		buf[2] = ((cur_flash_addr >> 16) & 0xFF);
+		buf[3] = ((cur_flash_addr >> 8) & 0xFF);
+		buf[4] = (cur_flash_addr & 0xFF);
+		buf[5] = 0x00;
+		buf[6] = 0xFF;
+		CTP_I2C_WRITE(ts->client, I2C_HW_Address, buf, 7);
+		msleep(10);
+		// Check 0xAA (Read Command)
+		buf[0] = 0x00;
+		buf[2] = 0x00;
+		CTP_I2C_READ(ts->client, I2C_HW_Address, buf, 2);
+		if (buf[1] != 0xAA) {
+			NVT_ERR("Check 0xAA (Read Command) error!! status=0x%02X\n", buf[1]);
+			ret = -1;
+			goto get_oem_data_out;
+		}
+		msleep(10);
+
+		// Step 5: Read Data and Checksum
+		for (j = 0; j < ((256 / 32) + 1); j++) {
+			cur_sram_addr = ts->mmap->READ_FLASH_CHECKSUM_ADDR + j * 32;
+			buf[0] = 0xFF;
+			buf[1] = (cur_sram_addr >> 16) & 0xFF;
+			buf[2] = (cur_sram_addr  >> 8) & 0xFF;
+			CTP_I2C_WRITE(ts->client, I2C_BLDR_Address, buf, 3);
+
+			buf[0] = cur_sram_addr & 0xFF;
+			CTP_I2C_READ(ts->client, I2C_BLDR_Address, buf, 33);
+
+			memcpy(tmp_data + j * 32, buf + 1, 32);
+		}
+		// get checksum of the 256 bytes data read
+		checksum_get = (uint16_t)((tmp_data[1] << 8) | tmp_data[0]);
+		// calculate checksum of of the 256 bytes data read
+		checksum_cal = (uint16_t)((cur_flash_addr >> 16) & 0xFF) + (uint16_t)((cur_flash_addr >> 8) & 0xFF) + (cur_flash_addr & 0xFF) + 0x00 + 0xFF;
+		for (j = 0; j < 256; j++) {
+			checksum_cal += tmp_data[j + 2];
+		}
+		checksum_cal = 65535 - checksum_cal + 1;
+		//NVT_LOG("checksum_get = 0x%04X, checksum_cal = 0x%04X\n", checksum_get, checksum_cal);
+		// compare the checksum got and calculated
+		if (checksum_get != checksum_cal) {
+			if (retry < 3) {
+				retry++;
+				goto get_oem_data_retry;
+			} else {
+				NVT_ERR("Checksum not match error! checksum_get=0x%04X, checksum_cal=0x%04X, i=%d\n", checksum_get, checksum_cal, i);
+				ret = -2;
+				goto get_oem_data_out;
+			}
+		}
+
+		// Step 6: Remapping (Remove 2 Bytes Checksum)
+		if ((i + 1) * 256 > size) {
+			memcpy(data + i * 256, tmp_data + 2, size - i * 256);
+		} else {
+			memcpy(data + i * 256, tmp_data + 2, 256);
+		}
+	}
+
+#if 0 // for debug
+	for (i = 0; i < size; i++) {
+		if (i % 16 == 0)
+			printk("\n");
+		printk("%02X ", data[i]);
+	}
+	printk("\n");
+#endif // for debug
+
+get_oem_data_out:
+	nvt_bootloader_reset();
+	nvt_check_fw_reset_state(RESET_STATE_INIT);
+
+	NVT_LOG("--\n");
+
+	LOG_DONE();
+	return ret;
+}
+
 extern bool suspend_state;
+/* add touchpad information by wanghan start */
+static int update_tp_info(const char *cmd)
+{
+	int32_t ret = -1;
+	uint8_t buf[16] = {0};
+	char tp_info_buf[64];
+
+	LOG_ENTRY();
+
+	if ( suspend_state || (ts->touch_state != TOUCH_STATE_WORKING) ) {
+		NVT_ERR("tp is suspended or flashing, can not to set\n");
+		return ret;
+	}
+
+	if(strcmp(cmd, TP_CALLBACK_CMD_INFO))
+		return ret;
+
+	if (mutex_lock_interruptible(&ts->lock)) {
+		LOGV("Touch is locking, Update info failed!\n");
+		return -ERESTARTSYS;
+	}
+
+	LOGV("Update TP info\n");
+
+	buf[0] = 0xFF;
+	buf[1] = (ts->mmap->EVENT_BUF_ADDR >> 16) & 0xFF;
+	buf[2] = (ts->mmap->EVENT_BUF_ADDR >> 8) & 0xFF;
+	ret = CTP_I2C_WRITE(ts->client, I2C_BLDR_Address, buf, 3);
+	if (ret < 0) {
+		NVT_ERR("i2c write error!(%d)\n", ret);
+		mutex_unlock(&ts->lock);
+		return ret;
+	}
+
+
+	buf[0] = EVENT_MAP_FWINFO;
+	buf[1] = 0x00;
+	buf[2] = 0x00;
+	ret = CTP_I2C_READ(ts->client, I2C_BLDR_Address, buf, 3);
+	if (ret < 0) {
+		NVT_ERR("i2c read error!(%d)\n", ret);
+		mutex_unlock(&ts->lock);
+		return ret;
+	}
+	mutex_unlock(&ts->lock);
+
+	NVT_LOG("IC FW Ver = 0x%02X, FW Ver Bar = 0x%02X\n", buf[1], buf[2]);
+	if (strstr(g_lcd_id, "tianma nt36672a") != NULL) {
+		sprintf(tp_info_buf, "[Vendor]tianma,[FW]0x%02x,[IC]nvt36672a\n", buf[1]);
+	} else if (strstr(g_lcd_id, "shenchao nt36672a") != NULL) {
+		sprintf(tp_info_buf, "[Vendor]shenchao,[FW]0x%02x,[IC]nvt36672a\n", buf[1]);
+	} else {
+		return -ENODEV;
+	}
+	update_lct_tp_info(tp_info_buf, NULL);
+	return 0;
+}
+
+static int32_t nvt_get_xiaomi_lockdown_info(void)
+{
+	uint8_t data_buf[8] = {0};
+	int ret = 0;
+
+	LOG_ENTRY();
+	ret = nvt_get_oem_data(data_buf, 0x1E000, 8);
+
+	if (ret < 0) {
+		NVT_ERR("get oem data failed!\n");
+	} else {
+		tp_maker_cg_lamination = data_buf[0];
+		NVT_LOG("The maker of Touch Panel & CG Lamination: 0x%02X\n", tp_maker_cg_lamination);
+		display_maker = data_buf[1];
+		NVT_LOG("Display maker: 0x%02X\n", display_maker);
+		cg_ink_color = data_buf[2];
+		NVT_LOG("CG ink color: 0x%02X\n", cg_ink_color);
+		hw_version = data_buf[3];
+		NVT_LOG("HW version: 0x%02X\n", hw_version);
+		project_id = ((data_buf[4] << 8) | data_buf[5]);
+		NVT_LOG("Project ID: 0x%04X\n", project_id);
+		cg_maker = data_buf[6];
+		NVT_LOG("CG maker: 0x%02X\n", cg_maker);
+		reservation_byte = data_buf[7];
+		NVT_LOG("Reservation byte: 0x%02X\n", reservation_byte);
+	}
+
+	LOG_DONE();
+	return ret;
+}
+
+int lct_nvt_tp_info_node_init(void)
+{
+	char tp_info_buf[64];
+	char tp_lockdown_info_buf[64];
+	LOG_ENTRY();
+	nvt_get_xiaomi_lockdown_info();
+	memset(tp_info_buf, 0, sizeof(tp_info_buf));
+	if (IS_ERR_OR_NULL(g_lcd_id)){
+		NVT_ERR("g_lcd_id is ERROR!\n");
+		return -1;
+	} else {
+		LOGV("LCM information : %s\n", g_lcd_id);
+		if (strstr(g_lcd_id, "tianma nt36672a") != NULL) {
+			sprintf(tp_info_buf, "[Vendor]tianma,[FW]0x%02x,[IC]nvt36672a\n", ts->fw_ver);
+			goto tp_node_init;
+		} else if (strstr(g_lcd_id, "shenchao nt36672a") != NULL) {
+			sprintf(tp_info_buf, "[Vendor]shenchao,[FW]0x%02x,[IC]nvt36672a\n", ts->fw_ver);
+			goto tp_node_init;
+		} else {
+			init_lct_tp_info(NULL, NULL);
+			LOG_DONE();
+			return -ENODEV;
+		}
+	}
+tp_node_init:
+	sprintf(tp_lockdown_info_buf, "%02X%02X%02X%02X%04X%02X%02X\n", tp_maker_cg_lamination, display_maker, cg_ink_color, hw_version, project_id, cg_maker, reservation_byte);
+	init_lct_tp_info(tp_info_buf, tp_lockdown_info_buf);
+	set_lct_tp_info_callback(update_tp_info);
+	LOG_DONE();
+	return 0;
+}
+/* add touchpad information by wanghan end */
 
 /*Novatek AC power plug swith*/
 static int32_t nvt_set_pwr_plug_switch(uint8_t pwr_plug_switch)
