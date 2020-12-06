@@ -1017,7 +1017,7 @@ void Boot_Update_Firmware(struct work_struct *work)
 
 
 	/* add by yangjiangzhu compatible to shenchao and tianma TP FW  2018/3/16  start */
-#ifdef CONFIG_KERNEL_CUSTOM_FACTORY
+#ifdef CONFIG_MACH_MI
 	NVT_LOG("Close the TP FW upgrade feature in longcheer factory version\n");
 	return;
 #endif
