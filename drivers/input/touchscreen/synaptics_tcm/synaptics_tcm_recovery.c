@@ -32,6 +32,10 @@
 
 #include "synaptics_tcm_core.h"
 
+/* add check F7A LCM by wanghan start */
+extern bool lct_syna_verify_flag;
+/* add check F7A LCM by wanghan end */
+
 #define SET_UP_RECOVERY_MODE true
 
 #define ENABLE_SYSFS_INTERFACE true
@@ -913,6 +917,10 @@ static int __init recovery_module_init(void)
 {
 	int retval;
 	LOG_ENTRY();
+	/* add check F7A LCM by wanghan start */
+	if(!lct_syna_verify_flag)
+		return -ENODEV;
+	/* add check F7A LCM by wanghan end */
 	LOGV("__init recovery module\n");
 	retval = syna_tcm_add_module(&recovery_module, true);
 	if(retval) {
