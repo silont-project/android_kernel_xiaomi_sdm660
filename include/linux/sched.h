@@ -1809,10 +1809,7 @@ struct task_struct {
 	int __user *set_child_tid;		/* CLONE_CHILD_SETTID */
 	int __user *clear_child_tid;		/* CLONE_CHILD_CLEARTID */
 
-	u64 utime, stime;
-#ifdef CONFIG_ARCH_HAS_SCALED_CPUTIME
-	u64 utimescaled, stimescaled;
-#endif
+	cputime_t utime, stime, utimescaled, stimescaled;
 	u64 gtime;
 	atomic64_t *time_in_state;
 	unsigned int max_state;
