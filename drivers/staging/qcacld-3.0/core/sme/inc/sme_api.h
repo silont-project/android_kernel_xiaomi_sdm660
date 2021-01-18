@@ -1535,7 +1535,7 @@ QDF_STATUS sme_apf_read_memory_register_callback(tHalHandle hal,
 QDF_STATUS sme_apf_read_memory_deregister_callback(tHalHandle h_hal);
 
 uint32_t sme_get_wni_dot11_mode(tHalHandle hal);
-QDF_STATUS sme_create_mon_session(tHalHandle hal_handle, uint8_t *bssid);
+QDF_STATUS sme_create_mon_session(tHalHandle hal_handle, uint8_t bssid[QDF_MAC_ADDR_SIZE]);
 QDF_STATUS sme_set_adaptive_dwelltime_config(tHalHandle hal,
 			struct adaptive_dwelltime_params *dwelltime_params);
 
