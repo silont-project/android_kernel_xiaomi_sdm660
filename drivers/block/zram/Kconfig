@@ -1,8 +1,8 @@
 config ZRAM
 	tristate "Compressed RAM block device support"
 	depends on BLOCK && SYSFS && CRYPTO
-	select CRYPTO_LZO
-	select ZPOOL
+	depends on CRYPTO_842 || CRYPTO_LZ4 || CRYPTO_LZ4HC || CRYPTO_LZO || CRYPTO_ZSTD
+	depends on ZPOOL && (Z3FOLD || ZSMALLOC)
 	default n
 	help
 	  Creates virtual block devices called /dev/zramX (X = 0, 1, ...).
@@ -37,5 +37,50 @@ config ZRAM_MEMORY_TRACKING
 
 	  See Documentation/blockdev/zram.txt for more information.
 
-config ZRAM_DEFAULT_COMP_ALGORITHM
-	string "Default ZRAM algorithm"
+if ZRAM
+
+choice
+	prompt "Default zRAM backend"
+	default DEFAULT_ZRAM_Z3FOLD
+	help
+	  Select the memory allocator that will be used by default to
+	  store compressed pages for all zRAM devices.
+
+	config DEFAULT_ZRAM_Z3FOLD
+		bool "z3fold" if Z3FOLD=y
+
+	config DEFAULT_ZRAM_ZSMALLOC
+		bool "zsmalloc" if ZSMALLOC=y
+endchoice
+
+config ZRAM_DEFAULT_BACKEND
+	string
+	default "z3fold" if DEFAULT_ZRAM_Z3FOLD
+	default "zsmalloc" if DEFAULT_ZRAM_ZSMALLOC
+	default "z3fold"
+
+choice
+	prompt "Default zRAM compressor"
+	default DEFAULT_ZRAM_LZ4
+	help
+	  Select the compressor that will be used by default to compress
+	  pages for all zRAM devices.
+
+	config DEFAULT_ZRAM_LZ4
+		bool "lz4" if CRYPTO_LZ4=y
+
+	config DEFAULT_ZRAM_LZ4HC
+		bool "lz4hc" if CRYPTO_LZ4HC=y
+
+	config DEFAULT_ZRAM_ZSTD
+		bool "zstd" if CRYPTO_ZSTD=y
+endchoice
+
+config ZRAM_DEFAULT_COMPRESSOR
+	string
+	default "lz4" if DEFAULT_ZRAM_LZ4
+	default "lz4hc" if DEFAULT_ZRAM_LZ4HC
+	default "zstd" if DEFAULT_ZRAM_ZSTD
+	default "lz4"
+
+endif
