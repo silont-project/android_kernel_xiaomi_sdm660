@@ -2,7 +2,7 @@
 clone: 
   depth: 1
 kind: pipeline
-name: ReinaPipeline
+name: WHYRED
 steps: 
   - 
     commands: 
@@ -12,6 +12,48 @@ steps:
         from_secret: BOT_API_KEY
     image: fadlyas/kernel_dockerfile:latest
     name: Zhard-Lair
-    trigger: 
-      branch: 
-        - yes
+
+--- 
+clone: 
+  depth: 1
+kind: pipeline
+name: TULIP
+steps: 
+  - 
+    commands: 
+      - "curl https://raw.githubusercontent.com/Reinazhard/myscripts/tulip-aosp/kernel.sh | bash"
+    environment: 
+      TELEGRAM_TOKEN: 
+        from_secret: BOT_API_KEY
+    image: fadlyas/kernel_dockerfile:latest
+    name: Zhard-Lair
+
+--- 
+clone: 
+  depth: 1
+kind: pipeline
+name: LAVENDER
+steps: 
+  - 
+    commands: 
+      - "curl https://raw.githubusercontent.com/Reinazhard/myscripts/lav-aosp/kernel.sh | bash"
+    environment: 
+      TELEGRAM_TOKEN: 
+        from_secret: BOT_API_KEY
+    image: fadlyas/kernel_dockerfile:latest
+    name: Zhard-Lair
+
+--- 
+clone: 
+  depth: 1
+kind: pipeline
+name: WAYNE
+steps: 
+  - 
+    commands: 
+      - "curl https://raw.githubusercontent.com/Reinazhard/myscripts/wayne-aosp/kernel.sh | bash"
+    environment: 
+      TELEGRAM_TOKEN: 
+        from_secret: BOT_API_KEY
+    image: fadlyas/kernel_dockerfile:latest
+    name: Zhard-Lair
