@@ -1324,6 +1324,8 @@ extern int send_sigurg(struct fown_struct *fown);
 
 struct mm_struct;
 
+#define SB_ACTIVE	(1<<30) 	/* Incremental FS */
+
 /*
  *	Umount options
  */
