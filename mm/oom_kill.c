@@ -543,7 +543,7 @@ static void oom_reap_task(struct task_struct *tsk)
 
 	/* Retry the down_read_trylock(mmap_sem) a few times */
 	while (attempts++ < MAX_OOM_REAP_RETRIES && !__oom_reap_task(tsk))
-		schedule_timeout_idle(HZ/10);
+		schedule_timeout(HZ/10);
 
 	if (attempts > MAX_OOM_REAP_RETRIES) {
 		pr_info("oom_reaper: unable to reap pid:%d (%s)\n",
