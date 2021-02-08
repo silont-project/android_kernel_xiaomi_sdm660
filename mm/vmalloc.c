@@ -285,6 +285,12 @@ static DEFINE_SPINLOCK(vmap_area_lock);
 LIST_HEAD(vmap_area_list);
 static LLIST_HEAD(vmap_purge_list);
 static struct rb_root vmap_area_root = RB_ROOT;
+
+/* The vmap cache globals are protected by vmap_area_lock */
+static struct rb_node *free_vmap_cache;
+static unsigned long cached_hole_size;
+static unsigned long cached_vstart;
+static unsigned long cached_align;
 static bool vmap_initialized __read_mostly;
 
 /*
@@ -1057,67 +1063,8 @@ retry:
 	 * If an allocation fails, the "vend" address is
 	 * returned. Therefore trigger the overflow path.
 	 */
-	if (!free_vmap_cache ||
-			size < cached_hole_size ||
-			vstart < cached_vstart ||
-			align < cached_align) {
-nocache:
-		cached_hole_size = 0;
-		free_vmap_cache = NULL;
-	}
-	/* record if we encounter less permissive parameters */
-	cached_vstart = vstart;
-	cached_align = align;
-
-	/* find starting point for our search */
-	if (free_vmap_cache) {
-		first = rb_entry(free_vmap_cache, struct vmap_area, rb_node);
-		addr = ALIGN(first->va_end, align);
-		if (addr < vstart)
-			goto nocache;
-		if (addr + size < addr)
-			goto overflow;
-
-	} else {
-		addr = ALIGN(vstart, align);
-		if (addr + size < addr)
-			goto overflow;
-
-		n = vmap_area_root.rb_node;
-		first = NULL;
-
-		while (n) {
-			struct vmap_area *tmp;
-			tmp = rb_entry(n, struct vmap_area, rb_node);
-			if (tmp->va_end >= addr) {
-				first = tmp;
-				if (tmp->va_start <= addr)
-					break;
-				n = n->rb_left;
-			} else
-				n = n->rb_right;
-		}
-
-		if (!first)
-			goto found;
-	}
-
-	/* from the starting point, walk areas until a suitable hole is found */
-	while (addr + size > first->va_start && addr + size <= vend) {
-		if (addr + cached_hole_size < first->va_start)
-			cached_hole_size = first->va_start - addr;
-		addr = ALIGN(first->va_end, align);
-		if (addr + size < addr)
-			goto overflow;
-
-		if (list_is_last(&first->list, &vmap_area_list))
-			goto found;
-
-		first = list_next_entry(first, list);
-	}
-
-found:
-	if (addr + size > vend)
+	addr = __alloc_vmap_area(size, align, vstart, vend, node);
+	if (unlikely(addr == vend))
 		goto overflow;
 
 	va->va_start = addr;
@@ -3386,10 +3333,10 @@ static void *s_start(struct seq_file *m, loff_t *pos)
 	struct vmap_area *va;
 
 	spin_lock(&vmap_area_lock);
-	va = list_first_entry(&vmap_area_list, typeof(*va), list);
+	va = list_entry((&vmap_area_list)->next, typeof(*va), list);
 	while (n > 0 && &va->list != &vmap_area_list) {
 		n--;
-		va = list_next_entry(va, list);
+		va = list_entry(va->list.next, typeof(*va), list);
 	}
 	if (!n && &va->list != &vmap_area_list)
 		return va;
@@ -3403,7 +3350,7 @@ static void *s_next(struct seq_file *m, void *p, loff_t *pos)
 	struct vmap_area *va = p, *next;
 
 	++*pos;
-	next = list_next_entry(va, list);
+	next = list_entry(va->list.next, typeof(*va), list);
 	if (&next->list != &vmap_area_list)
 		return next;
 

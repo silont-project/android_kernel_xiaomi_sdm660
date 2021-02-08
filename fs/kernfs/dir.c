@@ -548,7 +548,7 @@ static struct kernfs_node *__kernfs_new_node(struct kernfs_root *root,
 	 * ino ida allocations.
 	 */
 	ret = ida_simple_get(&root->ino_ida, 1, 0,
-			     GFP_KERNEL | __GFP_NOACCOUNT);
+			     GFP_KERNEL | !__GFP_ACCOUNT);
 	if (ret < 0)
 		goto err_out2;
 	kn->ino = ret;
