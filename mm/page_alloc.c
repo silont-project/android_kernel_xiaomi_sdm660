@@ -3216,6 +3216,7 @@ retry:
 		if (!woke_kswapd) {
 			atomic_long_inc(&kswapd_waiters);
 			woke_kswapd = true;
+			}
 		}
 		wake_all_kswapds(order, ac);
 

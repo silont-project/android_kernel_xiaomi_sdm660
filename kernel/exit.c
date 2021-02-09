@@ -441,12 +441,10 @@ static void exit_mm(struct task_struct *tsk)
 	enter_lazy_tlb(mm, current);
 	task_unlock(tsk);
 	mm_update_next_owner(mm);
-
-	mm_released = mmput(mm);
-	if (mm_released)
-		set_tsk_thread_flag(tsk, TIF_MM_RELEASED);
+	mmput(mm);
+	if (test_thread_flag(TIF_MEMDIE))
+		exit_oom_victim(tsk);
 }
-
 static struct task_struct *find_alive_thread(struct task_struct *p)
 {
 	struct task_struct *t;
