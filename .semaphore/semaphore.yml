@@ -1,0 +1,24 @@
+version: v1.0
+name: extended_kernel_whyred_ci
+agent:
+  machine:
+    type: e1-standard-2
+    os_image: ubuntu1804
+
+blocks:
+  - name: "Extended Kernel"
+    run:
+        when: "branch = 'extended' OR branch = 'extended-eas'"
+    task:
+      secrets:
+      - name: Tokens
+      - name: Version
+      jobs:
+      - name: Building Kernels
+        commands:
+          - sudo apt install bc
+          - checkout
+          - git clone https://github.com/attack11/my_scripts.git && cd my_scripts
+          - bash setup.sh --clang
+          - bash build-4.4.sh --clang --oldcam
+          - bash build-4.4.sh --clang --newcam
