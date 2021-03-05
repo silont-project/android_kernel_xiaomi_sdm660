@@ -16,7 +16,7 @@ SCHED_FEAT(START_DEBIT, true)
  * wakeup-preemption), since its likely going to consume data we
  * touched, increases cache locality.
  */
-SCHED_FEAT(NEXT_BUDDY, false)
+SCHED_FEAT(NEXT_BUDDY, true)
 
 /*
  * Prefer to schedule the task that ran last (when we did
@@ -55,7 +55,7 @@ SCHED_FEAT(NONTASK_CAPACITY, true)
  * Queue remote wakeups on the target CPU and process them
  * using the scheduler IPI. Reduces rq->lock contention/bounces.
  */
-SCHED_FEAT(TTWU_QUEUE, false)
+SCHED_FEAT(TTWU_QUEUE, true)
 
 #ifdef HAVE_RT_PUSH_IPI
 /*
@@ -107,7 +107,7 @@ SCHED_FEAT(EAS_PREFER_IDLE, true)
  * If enabled, this can be used to inform the scheduler about capacity
  * restrictions.
  */
-SCHED_FEAT(MIN_CAPACITY_CAPPING, false)
+SCHED_FEAT(MIN_CAPACITY_CAPPING, true)
 
 /*
  * Enforce the priority of candidates selected by find_best_target()
