@@ -1807,7 +1807,7 @@ static void wlan_hdd_print_suspend_fail_stats(hdd_context_t *hdd_ctx)
 		stats->suspend_fail[SUSPEND_FAIL_INITIAL_WAKEUP]);
 }
 #else
-#define wlan_hdd_print_suspend_fail_stats(hdd_ctx) (0)
+#define wlan_hdd_print_suspend_fail_stats(hdd_ctx)
 #endif
 
 void wlan_hdd_inc_suspend_stats(hdd_context_t *hdd_ctx,

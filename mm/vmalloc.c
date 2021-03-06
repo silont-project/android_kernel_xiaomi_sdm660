@@ -287,10 +287,6 @@ static LLIST_HEAD(vmap_purge_list);
 static struct rb_root vmap_area_root = RB_ROOT;
 
 /* The vmap cache globals are protected by vmap_area_lock */
-static struct rb_node *free_vmap_cache;
-static unsigned long cached_hole_size;
-static unsigned long cached_vstart;
-static unsigned long cached_align;
 static bool vmap_initialized __read_mostly;
 
 /*

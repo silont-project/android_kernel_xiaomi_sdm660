@@ -3262,7 +3262,6 @@ __alloc_pages_slowpath(gfp_t gfp_mask, unsigned int order,
 	enum migrate_mode migration_mode = MIGRATE_ASYNC;
 	bool deferred_compaction = false;
 	int contended_compaction = COMPACT_CONTENDED_NONE;
-	bool woke_kswapd = false;
 	int no_progress_loops = 0;
 
 	/*
