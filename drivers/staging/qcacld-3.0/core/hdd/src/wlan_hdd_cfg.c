@@ -6893,7 +6893,7 @@ static void hdd_cfg_print_action_oui(hdd_context_t *hdd_ctx)
 
 }
 #else
-#define hdd_cfg_print_action_oui(hdd_ctx) (0)
+#define hdd_cfg_print_action_oui(hdd_ctx)
 #endif
 
 /**
