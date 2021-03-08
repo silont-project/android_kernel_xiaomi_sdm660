@@ -3166,6 +3166,7 @@ static inline void cfs_se_util_change(struct sched_avg *avg)
 	WRITE_ONCE(avg->util_est.enqueued, enqueued);
 }
 
+/*
  * sched_entity:
  *
  *   load_sum := runnable_sum
@@ -3578,11 +3579,7 @@ update_cfs_rq_load_avg(u64 now, struct cfs_rq *cfs_rq, bool update_freq)
 
 int update_rt_rq_load_avg(u64 now, int cpu, struct rt_rq *rt_rq, int running)
 {
-	int ret;
-
-	ret = ___update_load_avg(now, cpu, &rt_rq->avg, 0, running, NULL, rt_rq);
-
-	return ret;
+	return 0;
 }
 
 unsigned long sched_get_rt_rq_util(int cpu)
