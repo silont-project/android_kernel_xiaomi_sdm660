@@ -236,22 +236,6 @@ const char *zpool_get_type(struct zpool *zpool)
 }
 
 /**
- * zpool_malloc_support_movable() - Check if the zpool support
- * allocate movable memory
- * @zpool:	The zpool to check
- *
- * This returns if the zpool support allocate movable memory.
- *
- * Implementations must guarantee this to be thread-safe.
- *
- * Returns: true if if the zpool support allocate movable memory, false if not
- */
-bool zpool_malloc_support_movable(struct zpool *zpool)
-{
-	return zpool->driver->malloc_support_movable;
-}
-
-/**
  * zpool_malloc() - Allocate memory
  * @pool	The zpool to allocate from.
  * @size	The amount of memory to allocate.
@@ -358,30 +342,6 @@ void zpool_unmap_handle(struct zpool *zpool, unsigned long handle)
 	zpool->driver->unmap(zpool->pool, handle);
 }
 
- /**
- * zpool_compact() - try to run compaction over zpool
- * @pool       The zpool to compact
- *
- * Returns: the number of migrated pages
- */
-unsigned long zpool_compact(struct zpool *zpool)
-{
-	return zpool->driver->compact ? zpool->driver->compact(zpool->pool) : 0;
-}
-
-
-/**
- * zpool_get_num_compacted() - get the number of migrated/compacted pages
- * @pool       The zpool to get compaction statistic for
- *
- * Returns: the total number of migrated pages for the pool
- */
-unsigned long zpool_get_num_compacted(struct zpool *zpool)
-{
-	return zpool->driver->get_num_compacted ?
-		zpool->driver->get_num_compacted(zpool->pool) : 0;
-}
-
 /**
  * zpool_get_total_size() - The total size of the pool
  * @pool	The zpool to check
@@ -393,18 +353,6 @@ unsigned long zpool_get_num_compacted(struct zpool *zpool)
 u64 zpool_get_total_size(struct zpool *zpool)
 {
 	return zpool->driver->total_size(zpool->pool);
-}
-
-/**
- * zpool_huge_class_size() - get size for the "huge" class
- * @pool	The zpool to check
- *
- * Returns: size of the huge class
- */
-size_t zpool_huge_class_size(struct zpool *zpool)
-{
-	return zpool->driver->huge_class_size ?
-		zpool->driver->huge_class_size(zpool->pool) : 0;
 }
 
 MODULE_LICENSE("GPL");
