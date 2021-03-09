@@ -5580,11 +5580,6 @@ unsigned long capacity_min_of(int cpu)
 }
 
 
-static inline bool energy_aware(void)
-{
-       return sched_feat(ENERGY_AWARE);
-}
-
 /*
  * CPU candidates.
  *
