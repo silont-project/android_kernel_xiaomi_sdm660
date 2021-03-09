@@ -5635,6 +5635,7 @@ struct energy_env {
 	 * the specified energy_env::task
 	 */
 	int			next_idx;
+	int			max_cpu_count;
 
 	/* Support data */
 	struct sched_group	*sg_top;
@@ -6120,7 +6121,7 @@ int calc_total_energy(struct energy_env *eenv, struct sched_domain *sd,
 		struct sched_group *sg = sd->groups;
 		do {
 			/* Skip SGs which do not contains a candidate CPU */
-			if (!cpumask_intersects(&eenv->cpus_mask, sched_group_span(sg)))
+			if (!cpumask_intersects(&eenv->cpus_mask, sched_group_cpus(sg)))
 				continue;
 
 			eenv->sg_top = sg;
