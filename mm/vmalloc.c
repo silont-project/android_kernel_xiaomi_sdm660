@@ -1213,13 +1213,6 @@ static atomic_long_t vmap_lazy_nr = ATOMIC_LONG_INIT(0);
  */
 static DEFINE_MUTEX(vmap_purge_lock);
 
-/*
- * Serialize vmap purging.  There is no actual criticial section protected
- * by this look, but we want to avoid concurrent calls for performance
- * reasons and to make the pcpu_get_vm_areas more deterministic.
- */
-static DEFINE_MUTEX(vmap_purge_lock);
-
 /* for per-CPU blocks */
 static void purge_fragmented_blocks_allcpus(void);
 
@@ -2475,7 +2468,7 @@ fail:
 	warn_alloc_failed(gfp_mask, order,
 			  "vmalloc: allocation failure, allocated %ld of %ld bytes\n",
 			  (area->nr_pages*PAGE_SIZE), area->size);
-	__vfree(area->addr);
+	__vfree_deferred(area->addr);
 	return NULL;
 }
 
