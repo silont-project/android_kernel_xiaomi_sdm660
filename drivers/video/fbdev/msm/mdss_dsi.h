@@ -300,10 +300,6 @@ struct dsi_shared_data {
 	struct msm_bus_scale_pdata *bus_scale_table;
 	u32 bus_handle;
 	u32 bus_refcount;
-
-	/* Shared mutex for pm_qos ref count */
-	struct mutex pm_qos_lock;
-	u32 pm_qos_req_cnt;
 };
 
 struct mdss_dsi_data {
@@ -605,6 +601,17 @@ struct mdss_dsi_ctrl_pdata {
 	struct delayed_work cmds_work;
 	struct delayed_work panel_dead_report_work;
 #endif
+	struct notifier_block wake_notif;
+	struct task_struct *wake_thread;
+	struct completion wake_comp;
+	wait_queue_head_t wake_waitq;
+	atomic_t disp_en;
+};
+
+enum {
+	MDSS_DISPLAY_OFF,
+	MDSS_DISPLAY_WAKING,
+	MDSS_DISPLAY_ON
 };
 
 struct dsi_status_data {
