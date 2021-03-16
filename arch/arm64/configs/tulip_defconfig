@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 4.4.259 Kernel Configuration
+# Linux/arm64 4.4.261 Kernel Configuration
 #
 CONFIG_ARM64=y
 CONFIG_64BIT=y
@@ -134,7 +134,8 @@ CONFIG_GENERIC_SCHED_CLOCK=y
 # FAIR Scheuler tunables
 #
 # CONFIG_PELT_UTIL_HALFLIFE_32 is not set
-CONFIG_PELT_UTIL_HALFLIFE_16=y
+# CONFIG_PELT_UTIL_HALFLIFE_16 is not set
+CONFIG_PELT_UTIL_HALFLIFE_12=y
 # CONFIG_PELT_UTIL_HALFLIFE_8 is not set
 CONFIG_CGROUPS=y
 # CONFIG_CGROUP_DEBUG is not set
@@ -4413,7 +4414,6 @@ CONFIG_MSM_TZ_LOG=y
 CONFIG_SENSORS_SSC=y
 # CONFIG_TEE is not set
 CONFIG_LEGACY_ENERGY_MODEL_DT=y
-CONFIG_LEGACY_EM_FREQ_TUPLE=y
 
 #
 # Firmware Drivers
