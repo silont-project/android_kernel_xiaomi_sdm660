@@ -111,9 +111,12 @@ obj-$(CONFIG_MACH_LONGCHEER)	+= lct_tp_fm_info.o
 obj-$(CONFIG_MACH_LONGCHEER)	+= lct_ctp_selftest.o
 obj-$(CONFIG_MACH_LONGCHEER)	+= lct_ctp_upgrade.o
 obj-$(CONFIG_MACH_LONGCHEER)	+= lct_if_ctp_upgrade.o
-
-# Whyred
-obj-$(CONFIG_MACH_XIAOMI_WHYRED)	+= lct_tp_gesture.o
+obj-$(CONFIG_MACH_LONGCHEER)    += lct_tp_grip_area.o
+obj-$(CONFIG_MACH_LONGCHEER)    += lct_if_ctp_upgrade.o
+obj-$(CONFIG_MACH_LONGCHEER)	+= lct_tp_gesture.o
+obj-$(CONFIG_MACH_LONGCHEER)    += lct_tp_selftest.o
+obj-$(CONFIG_MACH_LONGCHEER)    += lct_tp_work.o
+obj-$(CONFIG_MACH_LONGCHEER)    += lct_tp_info.o
 
 # HMI_L6653_A01
 obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_DSX_E7S)	+= synaptics_dsx_e7s/

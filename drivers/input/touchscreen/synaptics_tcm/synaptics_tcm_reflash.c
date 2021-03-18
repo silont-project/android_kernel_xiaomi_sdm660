@@ -2157,7 +2157,7 @@ static void reflash_startup_work(struct work_struct *work)
 	}
 	/* add tp vendor information by wanghan end */
 
-#ifdef CONFIG_KERNEL_CUSTOM_FACTORY
+#ifdef CONFIG_MACH_MI
 	LOGV("Close the TP FW upgrade feature in longcheer factory version\n");
 	return;
 #endif

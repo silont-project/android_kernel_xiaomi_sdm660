@@ -38,9 +38,10 @@
 #include <linux/input/tp_common.h>
 #endif
 
-#ifdef CONFIG_KERNEL_CUSTOM_FACTORY
+#ifdef CONFIG_MACH_MI
 #include "../lct_tp_work.h"
 #endif
+
 #include "../lct_tp_gesture.h"
 #include "../lct_tp_grip_area.h"
 
@@ -3178,7 +3179,7 @@ static int syna_tcm_fb_notifier_cb(struct notifier_block *nb,
 		transition = evdata->data;
 		if (action == FB_EARLY_EVENT_BLANK) {
 			if(*transition == FB_BLANK_POWERDOWN) {
-#ifdef CONFIG_KERNEL_CUSTOM_FACTORY
+#ifdef CONFIG_MACH_MI
 				if (!get_lct_tp_work_status()) {
 					tcm_hcd->in_suspend=true;
 					return 0;
@@ -3195,7 +3196,7 @@ static int syna_tcm_fb_notifier_cb(struct notifier_block *nb,
 			}
 		} else if (action == FB_EVENT_BLANK) {
 			if (*transition == FB_BLANK_POWERDOWN) {
-#ifdef CONFIG_KERNEL_CUSTOM_FACTORY
+#ifdef CONFIG_MACH_MI
 				if (!get_lct_tp_work_status()) {
 					tcm_hcd->in_suspend=true;
 					return 0;
@@ -3208,7 +3209,7 @@ static int syna_tcm_fb_notifier_cb(struct notifier_block *nb,
 				mutex_unlock(&tcm_hcd->pm_mutex);
 			} else if (*transition == FB_BLANK_UNBLANK) {
 				LOGV("touch resume\n");
-#ifdef CONFIG_KERNEL_CUSTOM_FACTORY
+#ifdef CONFIG_MACH_MI
 				if (!get_lct_tp_work_status()) {
 					tcm_hcd->in_suspend=false;
 					return 0;
@@ -3265,7 +3266,7 @@ static void do_syna_resume_work(struct work_struct *work)
 }
 /* add resume work by wanghan end */
 
-#ifdef CONFIG_KERNEL_CUSTOM_FACTORY
+#ifdef CONFIG_MACH_MI
 static int lct_tp_work_node_callback(bool flag)
 {
 	int retval = 0;
@@ -3512,7 +3513,7 @@ static int syna_tcm_probe(struct platform_device *pdev)
     }
 #endif
 
-#ifdef CONFIG_KERNEL_CUSTOM_FACTORY
+#ifdef CONFIG_MACH_MI
 	retval = init_lct_tp_work(lct_tp_work_node_callback);
 	if (retval < 0) {
 		LOGE(tcm_hcd->pdev->dev.parent, "Failed to add /proc/tp_work node!\n");
