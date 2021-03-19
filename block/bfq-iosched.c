@@ -3092,10 +3092,11 @@ static unsigned long bfq_bfqq_softrt_next_start(struct bfq_data *bfqd,
 		     jiffies_to_msecs(HZ * bfqq->service_from_backlogged /
 				      bfqd->bfq_wr_max_softrt_rate));
 
-	return max(bfqq->last_idle_bklogged +
-		   HZ * bfqq->service_from_backlogged /
-		   bfqd->bfq_wr_max_softrt_rate,
-		   jiffies + nsecs_to_jiffies(bfqq->bfqd->bfq_slice_idle) + 4);
+	return max3(bfqq->soft_rt_next_start,
+		    bfqq->last_idle_bklogged +
+		    HZ * bfqq->service_from_backlogged /
+		    bfqd->bfq_wr_max_softrt_rate,
+		    jiffies + nsecs_to_jiffies(bfqq->bfqd->bfq_slice_idle) + 4);
 }
 
 /*
@@ -4128,7 +4129,7 @@ static void bfq_init_bfqq(struct bfq_data *bfqd, struct bfq_queue *bfqq,
 	 * Set to the value for which bfqq will not be deemed as
 	 * soft rt when it becomes backlogged.
 	 */
-	bfqq->soft_rt_next_start = bfq_greatest_from_now();
+	bfqq->soft_rt_next_start = jiffies();
 
 	/* first request is almost certainly seeky */
 	bfqq->seek_history = 1;
