@@ -715,6 +715,7 @@ bfq_bfqq_resume_state(struct bfq_queue *bfqq, struct bfq_data *bfqd,
 	if (unlikely(busy))
 		old_wr_coeff = bfqq->wr_coeff;
 
+	bfqq->ttime = bic->saved_ttime;
 	bfqq->wr_coeff = bic->saved_wr_coeff;
 	bfqq->wr_start_at_switch_to_srt = bic->saved_wr_start_at_switch_to_srt;
 	BUG_ON(time_is_after_jiffies(bfqq->wr_start_at_switch_to_srt));
@@ -1305,7 +1306,7 @@ static void bfq_bfqq_handle_idle_busy_switch(struct bfq_data *bfqd,
 		 * details on the usage of the next variable.
 		 */
 		arrived_in_time =  ktime_get_ns() <=
-			RQ_BIC(rq)->ttime.last_end_request +
+			bfqq->ttime.last_end_request +
 			bfqd->bfq_slice_idle * 3;
 
 	bfq_log_bfqq(bfqd, bfqq,
@@ -2067,6 +2068,7 @@ static void bfq_bfqq_save_state(struct bfq_queue *bfqq)
 	if (!bic)
 		return;
 
+	bic->saved_ttime = bfqq->ttime;
 	bic->saved_has_short_ttime = bfq_bfqq_has_short_ttime(bfqq);
 	bic->saved_IO_bound = bfq_bfqq_IO_bound(bfqq);
 	bic->saved_in_large_burst = bfq_bfqq_in_large_burst(bfqq);
@@ -3959,11 +3961,6 @@ static void bfq_exit_bfqq(struct bfq_data *bfqd, struct bfq_queue *bfqq)
 	bfq_put_queue(bfqq); /* release process reference */
 }
 
-static void bfq_init_icq(struct io_cq *icq)
-{
-	icq_to_bic(icq)->ttime.last_end_request = ktime_get_ns() - (1ULL<<32);
-}
-
 static void bfq_exit_icq(struct io_cq *icq)
 {
 	struct bfq_io_cq *bic = icq_to_bic(icq);
@@ -4095,6 +4092,9 @@ static void bfq_init_bfqq(struct bfq_data *bfqd, struct bfq_queue *bfqq,
 		bfq_mark_bfqq_just_created(bfqq);
 	} else
 		bfq_clear_bfqq_sync(bfqq);
+
+	bfqq->ttime.last_end_request = ktime_get_ns() - (1ULL<<32);
+
 	bfq_mark_bfqq_IO_bound(bfqq);
 
 	/* Tentative initial value to trade off between thr and lat */
@@ -4201,14 +4201,14 @@ out:
 }
 
 static void bfq_update_io_thinktime(struct bfq_data *bfqd,
-				    struct bfq_io_cq *bic)
+				    struct bfq_queue *bfqq)
 {
-	struct bfq_ttime *ttime = &bic->ttime;
-	u64 elapsed = ktime_get_ns() - bic->ttime.last_end_request;
+	struct bfq_ttime *ttime = &bfqq->ttime;
+	u64 elapsed = ktime_get_ns() - bfqq->ttime.last_end_request;
 
 	elapsed = min_t(u64, elapsed, 2 * bfqd->bfq_slice_idle);
 
-	ttime->ttime_samples = (7*bic->ttime.ttime_samples + 256) / 8;
+	ttime->ttime_samples = (7*bfqq->ttime.ttime_samples + 256) / 8;
 	ttime->ttime_total = div_u64(7*ttime->ttime_total + 256*elapsed,  8);
 	ttime->ttime_mean = div64_ul(ttime->ttime_total + 128,
 				     ttime->ttime_samples);
@@ -4250,8 +4250,8 @@ static void bfq_update_has_short_ttime(struct bfq_data *bfqd,
 	 * decide whether to mark as has_short_ttime
 	 */
 	if (atomic_read(&bic->icq.ioc->active_ref) == 0 ||
-	    (bfq_sample_valid(bic->ttime.ttime_samples) &&
-	     bic->ttime.ttime_mean > bfqd->bfq_slice_idle))
+	    (bfq_sample_valid(bfqq->ttime.ttime_samples) &&
+	     bfqq->ttime.ttime_mean > bfqd->bfq_slice_idle))
 		has_short_ttime = false;
 
 	bfq_log_bfqq(bfqd, bfqq, "update_has_short_ttime: has_short_ttime %d",
@@ -4275,7 +4275,7 @@ static void bfq_rq_enqueued(struct bfq_data *bfqd, struct bfq_queue *bfqq,
 	if (rq->cmd_flags & REQ_META)
 		bfqq->meta_pending++;
 
-	bfq_update_io_thinktime(bfqd, bic);
+	bfq_update_io_thinktime(bfqd, bfqq);
 	bfq_update_has_short_ttime(bfqd, bfqq, bic);
 	bfq_update_io_seektime(bfqd, bfqq, rq);
 
@@ -4445,7 +4445,7 @@ static void bfq_completed_request(struct request_queue *q, struct request *rq)
 
 	now_ns = ktime_get_ns();
 
-	RQ_BIC(rq)->ttime.last_end_request = now_ns;
+	bfqq->ttime.last_end_request = now_ns;
 
 	/*
 	 * Using us instead of ns, to get a reasonable precision in
@@ -5281,7 +5281,6 @@ static struct elevator_type iosched_bfq = {
 		.elevator_completed_req_fn =	bfq_completed_request,
 		.elevator_former_req_fn =	elv_rb_former_request,
 		.elevator_latter_req_fn =	elv_rb_latter_request,
-		.elevator_init_icq_fn =		bfq_init_icq,
 		.elevator_exit_icq_fn =		bfq_exit_icq,
 		.elevator_set_req_fn =		bfq_set_request,
 		.elevator_put_req_fn =		bfq_put_request,
