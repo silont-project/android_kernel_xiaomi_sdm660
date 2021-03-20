@@ -124,7 +124,7 @@ static const int bfq_default_max_budget = (16 * 1024);
 static const int bfq_async_charge_factor = 3;
 
 /* Default timeout values, in jiffies, approximating CFQ defaults. */
-static const int bfq_timeout = (HZ / 8);
+static const int bfq_timeout = (1000 / 8);
 
 static struct kmem_cache *bfq_pool;
 
@@ -3188,12 +3188,12 @@ static unsigned long bfq_bfqq_softrt_next_start(struct bfq_data *bfqd,
 "softrt_next_start: service_blkg %lu soft_rate %u sects/sec interval %u",
 		     bfqq->service_from_backlogged,
 		     bfqd->bfq_wr_max_softrt_rate,
-		     jiffies_to_msecs(HZ * bfqq->service_from_backlogged /
+		     jiffies_to_msecs(1000 * bfqq->service_from_backlogged /
 				      bfqd->bfq_wr_max_softrt_rate));
 
 	return max3(bfqq->soft_rt_next_start,
 		    bfqq->last_idle_bklogged +
-		    HZ * bfqq->service_from_backlogged /
+		    1000 * bfqq->service_from_backlogged /
 		    bfqd->bfq_wr_max_softrt_rate,
 		    jiffies + nsecs_to_jiffies(bfqq->bfqd->bfq_slice_idle) + 4);
 }
