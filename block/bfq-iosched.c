@@ -4332,8 +4332,6 @@ static void bfq_insert_request(struct request_queue *q, struct request *rq)
 	if (!in_interrupt()) {
 		new_bfqq = bfq_setup_cooperator(bfqd, bfqq, rq, true);
 		if (new_bfqq) {
-			if (bic_to_bfqq(RQ_BIC(rq), 1) != bfqq)
-				new_bfqq = bic_to_bfqq(RQ_BIC(rq), 1);
 			/*
 			 * Release the request's reference to the old bfqq
 			 * and make sure one is taken to the shared queue.
