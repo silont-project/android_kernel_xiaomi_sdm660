@@ -83,8 +83,6 @@ config IOSCHED_ANXIETY
 	  expedited.
 
 choice
-
-choice
 	prompt "Default I/O scheduler"
 	default DEFAULT_CFQ
 	help
