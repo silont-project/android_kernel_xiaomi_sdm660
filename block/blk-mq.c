@@ -295,7 +295,7 @@ struct request *blk_mq_alloc_request_hctx(struct request_queue *q, int rw,
 	ctx = __blk_mq_get_ctx(q, cpumask_first(hctx->cpumask));
 
 	blk_mq_set_alloc_data(&alloc_data, q, flags, ctx, hctx);
-	rq = __blk_mq_alloc_request(&alloc_data, rw, 0);
+	rq = __blk_mq_alloc_request(&alloc_data, rw);
 	if (!rq) {
 		blk_queue_exit(q);
 		return ERR_PTR(-EWOULDBLOCK);
@@ -2167,6 +2167,25 @@ void blk_mq_free_queue(struct request_queue *q)
 	blk_mq_exit_hw_queues(q, set, set->nr_hw_queues);
 	blk_mq_free_hw_queues(q, set);
 }
+
+static void blk_mq_queue_reinit(struct request_queue *q,
+				const struct cpumask *online_mask)
+{
+	WARN_ON_ONCE(!atomic_read(&q->mq_freeze_depth));
+
+	blk_mq_sysfs_unregister(q);
+
+	/*
+	 * redo blk_mq_init_cpu_queues and blk_mq_init_hw_queues. FIXME: maybe
+	 * we should change hctx numa_node according to new topology (this
+	 * involves free and re-allocate memory, worthy doing?)
+	 */
+
+	blk_mq_map_swqueue(q, online_mask);
+
+	blk_mq_sysfs_register(q);
+}
+
 
 static int blk_mq_queue_reinit_notify(struct notifier_block *nb,
 				      unsigned long action, void *hcpu)
