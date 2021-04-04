@@ -1780,6 +1780,9 @@ static int zram_add(void)
 
 	init_rwsem(&zram->init_lock);
 
+#ifdef CONFIG_ZRAM_DEDUP
+	zram->use_dedup = true;
+#endif
 	queue = blk_alloc_queue(GFP_KERNEL);
 	if (!queue) {
 		pr_err("Error allocating disk queue for device %d\n",
