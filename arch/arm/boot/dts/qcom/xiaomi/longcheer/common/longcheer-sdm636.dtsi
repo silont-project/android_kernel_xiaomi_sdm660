@@ -95,7 +95,7 @@
 &pm660_haptics {
 	compatible = "qcom,qpnp-haptic";
 	qcom,actuator-type = "erm";
-	qcom,vmax-mv = <3000>;
+	qcom,vmax-mv = <2400>;
 	qcom,play-mode = "direct";
 	qcom,ilim-ma = <800>;
 	qcom,wave-shape = "square";
