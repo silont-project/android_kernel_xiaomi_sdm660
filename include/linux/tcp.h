@@ -220,7 +220,6 @@ struct tcp_sock {
 		u8 reord;    /* reordering detected */
 	} rack;
 	u16	advmss;		/* Advertised MSS			*/
-	u8	unused;
 	u8	tlp_retrans:1,	/* TLP is a retransmission */
 		unused_1:7;
 	u32	chrono_start;	/* Start time in jiffies of a TCP chrono */
