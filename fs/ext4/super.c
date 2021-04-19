@@ -3760,12 +3760,7 @@ static int ext4_fill_super(struct super_block *sb, void *data, int silent)
 			goto failed_mount;
 		}
 	}
-<<<<<<< HEAD
-	sbi->s_group_desc = ext4_kvmalloc(db_count *
-=======
-	rcu_assign_pointer(sbi->s_group_desc,
-			   kvmalloc(db_count *
->>>>>>> 6a0e0ff177d9d (Backport new vmalloc for "large performance benefits")
+	sbi->s_group_desc = kvmalloc(db_count *
 					  sizeof(struct buffer_head *),
 					  GFP_KERNEL);
 	if (sbi->s_group_desc == NULL) {
