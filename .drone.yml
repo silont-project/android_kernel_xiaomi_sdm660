@@ -6,12 +6,11 @@ name: WHYRED
 steps: 
   - 
     commands:
-      - "apt-get update && apt-get upgrade -y && DEBIAN_FRONTEND=noninteractive apt-get install default-jdk -y"
       - "curl https://raw.githubusercontent.com/Reinazhard/myscripts/master/kernel.sh | bash"
     environment: 
       TELEGRAM_TOKEN: 
         from_secret: BOT_API_KEY
-    image: fadlyas/kernel_dockerfile:latest
+    image: azrim89/kernel:latest
     name: Zhard-Lair
 
 --- 
@@ -22,12 +21,11 @@ name: TULIP
 steps: 
   - 
     commands: 
-      - "apt-get update && apt-get upgrade -y && DEBIAN_FRONTEND=noninteractive apt-get install default-jdk -y"
       - "curl https://raw.githubusercontent.com/Reinazhard/myscripts/tulip/kernel.sh | bash"
     environment: 
       TELEGRAM_TOKEN: 
         from_secret: BOT_API_KEY
-    image: fadlyas/kernel_dockerfile:latest
+    image: azrim89/kernel:latest
     name: Zhard-Lair
 
 --- 
@@ -38,12 +36,11 @@ name: LAVENDER
 steps: 
   - 
     commands: 
-      - "apt-get update && apt-get upgrade -y && DEBIAN_FRONTEND=noninteractive apt-get install default-jdk -y"
       - "curl https://raw.githubusercontent.com/Reinazhard/myscripts/lavender/kernel.sh | bash"
     environment: 
       TELEGRAM_TOKEN: 
         from_secret: BOT_API_KEY
-    image: fadlyas/kernel_dockerfile:latest
+    image: azrim89/kernel:latest
     name: Zhard-Lair
 
 --- 
@@ -54,10 +51,9 @@ name: WAYNE
 steps: 
   - 
     commands: 
-      - "apt-get update && apt-get upgrade -y && DEBIAN_FRONTEND=noninteractive apt-get install default-jdk -y"
       - "curl https://raw.githubusercontent.com/Reinazhard/myscripts/wayne/kernel.sh | bash"
     environment: 
       TELEGRAM_TOKEN: 
         from_secret: BOT_API_KEY
-    image: fadlyas/kernel_dockerfile:latest
+    image: azrim89/kernel:latest
     name: Zhard-Lair
