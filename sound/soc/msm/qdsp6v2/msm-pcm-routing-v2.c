@@ -17007,7 +17007,7 @@ static const char * const int4_mi2s_rx_vi_fb_tx_mono_mux_text[] = {
 	"ZERO", "INT5_MI2S_TX"
 };
 
-static const char * const int4_mi2s_rx_vi_fb_tx_stereo_mux_text[] = {
+static const char * int4_mi2s_rx_vi_fb_tx_stereo_mux_text[] = {
 	"ZERO", "INT5_MI2S_TX"
 };
 
