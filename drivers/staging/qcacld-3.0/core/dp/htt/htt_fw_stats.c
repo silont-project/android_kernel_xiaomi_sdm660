@@ -361,7 +361,7 @@ htt_t2h_stats_pdev_stats_print(struct wlan_dbg_stats *wlan_pdev_stats,
 
 }
 #else
-#define htt_t2h_stats_pdev_stats_print(wlan_pdev_stats, concise) (0)
+#define htt_t2h_stats_pdev_stats_print(wlan_pdev_stats, concise)
 #endif
 
 static void

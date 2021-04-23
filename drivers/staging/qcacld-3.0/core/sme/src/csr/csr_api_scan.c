@@ -6139,7 +6139,7 @@ static void csr_diag_scan_channels(tpAniSirGlobal pMac, tSmeCmd *pCommand)
 	WLAN_HOST_DIAG_LOG_REPORT(pScanLog);
 }
 #else
-#define csr_diag_scan_channels(pMac, pCommand) (0)
+#define csr_diag_scan_channels(pMac, pCommand)
 #endif /* #ifdef FEATURE_WLAN_DIAG_SUPPORT_CSR */
 
 static QDF_STATUS csr_scan_channels(tpAniSirGlobal pMac, tSmeCmd *pCommand)
