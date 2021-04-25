@@ -437,7 +437,7 @@ int qcom_step_chg_init(bool step_chg_enable, bool sw_jeita_enable)
 	if (!chip)
 		return -ENOMEM;
 
-	chip->step_chg_ws = wakeup_source_register("qcom-step-chg");
+	chip->step_chg_ws = wakeup_source_register(NULL, "qcom-step-chg");
 	if (!chip->step_chg_ws) {
 		rc = -EINVAL;
 		goto cleanup;
