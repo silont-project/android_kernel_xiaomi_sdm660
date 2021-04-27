@@ -2137,6 +2137,10 @@ struct task_struct {
 		bool free_stack;
 	} async_free;
 
+#ifdef CONFIG_ANDROID_SIMPLE_LMK
+	struct task_struct		*simple_lmk_next;
+#endif
+
 /* CPU-specific state of this task */
 	struct thread_struct thread;
 /*
