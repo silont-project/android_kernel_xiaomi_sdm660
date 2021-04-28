@@ -386,7 +386,7 @@ static int smblib_adjust_jeita_cc_config(struct smb_charger *chg,int val_u)
 			(current_cc_minus_ua != JEITA_CC_COMP_CFG_IN_UEFI * 1000)) {
 		rc = smblib_set_charge_param(chg, &chg->param.jeita_cc_comp,
 				JEITA_CC_COMP_CFG_IN_UEFI * 1000);
-		pr_err("smblib_adjust_jeita_cc_config jeita cc has changed ,write it back ,write result = %d\n", rc);
+		pr_debug("smblib_adjust_jeita_cc_config jeita cc has changed ,write it back ,write result = %d\n", rc);
 	} else if ((val_u < chg->batt_profile_fcc_ua) &&
 			((chg->batt_profile_fcc_ua - val_u) <= JEITA_CC_COMP_CFG_IN_UEFI * 1000)) {
 		if (current_cc_minus_ua != (JEITA_CC_COMP_CFG_IN_UEFI * 1000 - (chg->batt_profile_fcc_ua - val_u))) {
@@ -394,16 +394,16 @@ static int smblib_adjust_jeita_cc_config(struct smb_charger *chg,int val_u)
 			rc = smblib_set_charge_param(chg,
 					&chg->param.jeita_cc_comp,
 					current_cc_minus_ua);
-			pr_err("smblib_adjust_jeita_cc_config jeita cc need to decrease to %d,write result = %d\n", current_cc_minus_ua,rc);
+			pr_debug("smblib_adjust_jeita_cc_config jeita cc need to decrease to %d,write result = %d\n", current_cc_minus_ua,rc);
 		} else {
-			pr_err("smblib_adjust_jeita_cc_config jeita cc have decreased \n");
+			pr_debug("smblib_adjust_jeita_cc_config jeita cc have decreased \n");
 		}
 	} else if ((val_u < chg->batt_profile_fcc_ua) &&
 			((chg->batt_profile_fcc_ua - val_u) > JEITA_CC_COMP_CFG_IN_UEFI * 1000)) {
 		rc = smblib_set_charge_param(chg, &chg->param.jeita_cc_comp, 0);
-		pr_err("smblib_adjust_jeita_cc_config jeita need to set to zero,write result = %d\n", rc);
+		pr_debug("smblib_adjust_jeita_cc_config jeita need to set to zero,write result = %d\n", rc);
 	} else {
-		pr_err("smblib_adjust_jeita_cc_config do nothing \n");
+		pr_debug("smblib_adjust_jeita_cc_config do nothing \n");
 	}
 
 	return rc;
@@ -2524,7 +2524,7 @@ int smblib_set_prop_system_temp_level(struct smb_charger *chg,
 
 #ifdef CONFIG_MACH_LONGCHEER
 #ifdef THERMAL_CONFIG_FB
-	pr_err("smblib_set_prop_system_temp_level val=%d, chg->system_temp_level=%d, LctThermal=%d, lct_backlight_off= %d, IsInCall=%d, hwc_check_india=%d\n ",
+	pr_debug("smblib_set_prop_system_temp_level val=%d, chg->system_temp_level=%d, LctThermal=%d, lct_backlight_off= %d, IsInCall=%d, hwc_check_india=%d\n ",
 		val->intval,chg->system_temp_level, LctThermal, lct_backlight_off, LctIsInCall, hwc_check_india);
 
 	if (LctThermal == 0)
