@@ -793,7 +793,6 @@ static ssize_t comp_algorithm_show(struct device *dev,
 static ssize_t comp_algorithm_store(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t len)
 {
-#if 0
 	struct zram *zram = dev_to_zram(dev);
 	char compressor[ARRAY_SIZE(zram->compressor)];
 	size_t sz;
@@ -816,7 +815,6 @@ static ssize_t comp_algorithm_store(struct device *dev,
 
 	strcpy(zram->compressor, compressor);
 	up_write(&zram->init_lock);
-#endif
 	return len;
 }
 
