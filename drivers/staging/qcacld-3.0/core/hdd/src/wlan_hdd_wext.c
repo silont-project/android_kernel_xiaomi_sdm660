@@ -9442,9 +9442,9 @@ static int __iw_get_char_setnone(struct net_device *dev,
 				scnprintf(extra + len, WE_MAX_STR_LEN - len,
 					  "\n HDD Conn State - %s "
 					  "\n\n SME State:"
-					  "\n Neighbour Roam State - %s"
-					  "\n CSR State - %s"
-					  "\n CSR Substate - %s",
+					  "\n Neighbour Roam State - %d"
+					  "\n CSR State - %d"
+					  "\n CSR Substate - %d",
 					  hdd_connection_state_string
 						  (pHddStaCtx->conn_info.connState),
 					  mac_trace_get_neighbour_roam_state
@@ -9466,8 +9466,8 @@ static int __iw_get_char_setnone(struct net_device *dev,
 			buf =
 				scnprintf(extra + len, WE_MAX_STR_LEN - len,
 					  "\n\n LIM STATES:-"
-					  "\n Global Sme State - %s "
-					  "\n Global mlm State - %s " "\n",
+					  "\n Global Sme State - %d "
+					  "\n Global mlm State - %d " "\n",
 					  mac_trace_get_lim_sme_state
 						  (sme_get_lim_sme_state(hHal)),
 					  mac_trace_get_lim_mlm_state
@@ -9482,8 +9482,8 @@ static int __iw_get_char_setnone(struct net_device *dev,
 							  WE_MAX_STR_LEN -
 							  len,
 							  "\n Lim Valid Session %d:-"
-							  "\n PE Sme State - %s "
-							  "\n PE Mlm State - %s "
+							  "\n PE Sme State - %d "
+							  "\n PE Mlm State - %d "
 							  "\n", check,
 							  mac_trace_get_lim_sme_state
 								  (sme_get_lim_sme_session_state
