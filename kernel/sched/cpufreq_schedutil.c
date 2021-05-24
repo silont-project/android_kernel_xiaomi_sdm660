@@ -12,12 +12,10 @@
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #include <linux/cpufreq.h>
-#include <linux/fb.h>
 #include <linux/kthread.h>
 #include <linux/slab.h>
 #include <trace/events/power.h>
 #include <linux/sched/sysctl.h>
-#include <linux/energy_model.h>
 #include <linux/binfmts.h>
 #include "sched.h"
 
@@ -64,10 +62,6 @@ struct sugov_policy {
 
 	bool limits_changed;
 	bool need_freq_update;
-
-	/* Framebuffer callbacks */
-	struct notifier_block fb_notif;
-	bool is_panel_blank;
 };
 
 struct sugov_cpu {
@@ -106,7 +100,7 @@ static bool sugov_should_update_freq(struct sugov_policy *sg_policy, u64 time)
 	 *
 	 * However, drivers cannot in general deal with cross-cpu
 	 * requests, so while get_next_freq() will work, our
-	 * sugov_update_commit() call may not.
+	 * sugov_update_commit() call may not for the fast switching platforms.
 	 *
 	 * Hence stop here for remote requests if they aren't supported
 	 * by the hardware, as calculating the frequency is pointless if
@@ -246,7 +240,7 @@ static unsigned int get_next_freq(struct sugov_policy *sg_policy,
 	unsigned int freq = arch_scale_freq_invariant() ?
 				policy->cpuinfo.max_freq : policy->cur;
 
-	freq = map_util_freq(util, freq, max);
+	freq = (freq + (freq >> 2)) * util / max;
 
 	if (freq == sg_policy->cached_raw_freq && !sg_policy->need_freq_update)
 		return sg_policy->next_freq;
@@ -267,13 +261,11 @@ static void sugov_get_util(unsigned long *util, unsigned long *max, int cpu)
 	*max = max_cap;
 }
 
-static void sugov_set_iowait_boost(struct sugov_cpu *sg_cpu, u64 time,
-				   unsigned int flags)
+static void sugov_set_iowait_boost(struct sugov_cpu *sg_cpu, u64 time)
 {
 	struct sugov_policy *sg_policy = sg_cpu->sg_policy;
 
-	if (!sg_policy->tunables->iowait_boost_enable ||
-	     sg_policy->is_panel_blank)
+	if (!sg_policy->tunables->iowait_boost_enable)
 		return;
 
 	if (sg_cpu->iowait_boost) {
@@ -285,8 +277,7 @@ static void sugov_set_iowait_boost(struct sugov_cpu *sg_cpu, u64 time,
 			sg_cpu->iowait_boost_pending = false;
 		}
 	}
-
-	if (flags & SCHED_CPUFREQ_IOWAIT) {
+	if (sg_cpu->flags & SCHED_CPUFREQ_IOWAIT) {
 		if (sg_cpu->iowait_boost_pending)
 			return;
 
@@ -332,7 +323,7 @@ static void sugov_iowait_boost(struct sugov_cpu *sg_cpu, unsigned long *util,
 #ifdef CONFIG_NO_HZ_COMMON
 static bool sugov_cpu_is_busy(struct sugov_cpu *sg_cpu)
 {
-	unsigned long idle_calls = tick_nohz_get_idle_calls();
+	unsigned long idle_calls = tick_nohz_get_idle_calls_cpu(sg_cpu->cpu);
 	bool ret = idle_calls == sg_cpu->saved_idle_calls;
 
 	sg_cpu->saved_idle_calls = idle_calls;
@@ -352,7 +343,7 @@ static void sugov_update_single(struct update_util_data *hook, u64 time,
 	unsigned int next_f;
 	bool busy;
 
-	sugov_set_iowait_boost(sg_cpu, time, flags);
+	sugov_set_iowait_boost(sg_cpu, time);
 	sg_cpu->last_update = time;
 
 	if (!sugov_should_update_freq(sg_policy, time))
@@ -375,7 +366,8 @@ static void sugov_update_single(struct update_util_data *hook, u64 time,
 		 * Do not reduce the frequency if the CPU has not been idle
 		 * recently, as the reduction is likely to be premature then.
 		 */
-		if (busy && next_f < sg_policy->next_freq) {
+		if (busy && next_f < sg_policy->next_freq &&
+		    sg_policy->next_freq != UINT_MAX) {
 			next_f = sg_policy->next_freq;
 			/* clear cache when it's bypassed */
 			sg_policy->cached_raw_freq = 0;
@@ -444,7 +436,7 @@ static void sugov_update_shared(struct update_util_data *hook, u64 time,
 	sg_cpu->max = max;
 	sg_cpu->flags = flags;
 
-	sugov_set_iowait_boost(sg_cpu, time, flags);
+	sugov_set_iowait_boost(sg_cpu, time);
 	sg_cpu->last_update = time;
 
 	if (sugov_should_update_freq(sg_policy, time)) {
@@ -747,23 +739,6 @@ static void sugov_tunables_restore(struct cpufreq_policy *policy)
 	update_min_rate_limit_ns(sg_policy);
 }
 
-static int fb_notifier_cb(struct notifier_block *nb, unsigned long action,
-			  void *data)
-{
-	struct sugov_policy *sg_policy = container_of(nb, struct sugov_policy, fb_notif);
-	int *blank = ((struct fb_event *)data)->data;
-
-	if (action != FB_EARLY_EVENT_BLANK)
-		return NOTIFY_OK;
-
-	if (*blank == FB_BLANK_UNBLANK)
-		sg_policy->is_panel_blank = false;
-	else
-		sg_policy->is_panel_blank = true;
-
-	return NOTIFY_OK;
-}
-
 static int sugov_init(struct cpufreq_policy *policy)
 {
 	struct sugov_policy *sg_policy;
@@ -823,7 +798,6 @@ static int sugov_init(struct cpufreq_policy *policy)
 	tunables->iowait_boost_enable = true;
 	policy->governor_data = sg_policy;
 	sg_policy->tunables = tunables;
-	sg_policy->is_panel_blank = false;
 
 	sugov_tunables_restore(policy);
 
@@ -835,15 +809,6 @@ static int sugov_init(struct cpufreq_policy *policy)
 
 out:
 	mutex_unlock(&global_tunables_lock);
-
-	sg_policy->fb_notif.notifier_call = fb_notifier_cb;
-	sg_policy->fb_notif.priority = INT_MAX;
-	ret = fb_register_client(&sg_policy->fb_notif);
-	if (ret) {
-		pr_err("Failed to register fb notifier, err: %d\n", ret);
-		goto fail;
-	}
-
 	return 0;
 
 fail:
@@ -853,10 +818,9 @@ fail:
 
 stop_kthread:
 	sugov_kthread_stop(sg_policy);
-
-free_sg_policy:
 	mutex_unlock(&global_tunables_lock);
 
+free_sg_policy:
 	sugov_policy_free(sg_policy);
 
 disable_fast_switch:
@@ -872,6 +836,8 @@ static int sugov_exit(struct cpufreq_policy *policy)
 	struct sugov_tunables *tunables = sg_policy->tunables;
 	unsigned int count;
 
+	cpufreq_disable_fast_switch(policy);
+
 	mutex_lock(&global_tunables_lock);
 
 	count = gov_attr_set_put(&tunables->attr_set, &sg_policy->tunables_hook);
@@ -880,8 +846,6 @@ static int sugov_exit(struct cpufreq_policy *policy)
 		sugov_tunables_save(policy, tunables);
 		sugov_tunables_free(tunables);
 	}
-
-	fb_unregister_client(&sg_policy->fb_notif);
 
 	mutex_unlock(&global_tunables_lock);
 
@@ -1003,11 +967,6 @@ struct cpufreq_governor cpufreq_gov_schedutil = {
 
 static int __init sugov_register(void)
 {
-        int cpu;
-
-        for_each_possible_cpu(cpu)
-                per_cpu(sugov_cpu, cpu).cpu = cpu;
-
 	return cpufreq_register_governor(&cpufreq_gov_schedutil);
 }
 fs_initcall(sugov_register);
