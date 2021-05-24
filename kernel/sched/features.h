@@ -117,12 +117,6 @@ SCHED_FEAT(MIN_CAPACITY_CAPPING, false)
 SCHED_FEAT(FBT_STRICT_ORDER, false)
 
 /*
- * Use the Simplified Energy Model for EAS accounting only for
- * active costs of CPUs.
- */
-SCHED_FEAT(EAS_SIMPLIFIED_EM, true)
-
-/*
  * Apply schedtune boost hold to tasks of all sched classes.
  * If enabled, schedtune will hold the boost applied to a CPU
  * for 50ms regardless of task activation - if the task is
