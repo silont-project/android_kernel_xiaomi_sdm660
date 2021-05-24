@@ -7273,8 +7273,6 @@ compute_energy_simple(struct task_struct *p, int dst_cpu, struct perf_domain *pd
 		 */
 		for_each_cpu_and(cpu, perf_domain_span(pd), cpu_online_mask) {
 			util = cpu_util_next(cpu, p, dst_cpu);
-			/* XXX: 4.14 backport: mimic sugov */
-			util += cpu_util_rt(cpu);
 			max_util = max(util, max_util);
 			sum_util += util;
 		}
