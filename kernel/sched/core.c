@@ -276,15 +276,15 @@ int sysctl_sched_rt_runtime = 950000;
 cpumask_var_t cpu_isolated_map;
 
 struct rq *
-lock_rq_of(struct task_struct *p, unsigned long *flags)
+lock_rq_of(struct task_struct *p,  struct rq_flags *rf)
 {
-	return task_rq_lock(p, flags);
+	return task_rq_lock(p, rf);
 }
 
 void
-unlock_rq_of(struct rq *rq, struct task_struct *p, unsigned long *flags)
+unlock_rq_of(struct rq *rq, struct task_struct *p, struct rq_flags *rf)
 {
-	task_rq_unlock(rq, p, flags);
+	task_rq_unlock(rq, p, rf);
 }
 
 /*
@@ -1255,7 +1255,7 @@ static int migration_cpu_stop(void *data)
 	 */
 	if (task_rq(p) == rq) {
 		if (task_on_rq_queued(p))
-			rq = __migrate_task(rq, p, arg->dest_cpu);
+			rq = __migrate_task(rq, &rf, p, arg->dest_cpu);
 		else
 			p->wake_cpu = arg->dest_cpu;
 	}
