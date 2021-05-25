@@ -9867,6 +9867,7 @@ more_balance:
 			goto no_move;
 		}
 
+		/*
 		 * cur_ld_moved - load moved in current iteration
 		 * ld_moved     - cumulative load moved across iterations
 		 */
