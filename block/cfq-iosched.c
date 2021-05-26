@@ -42,12 +42,12 @@ static const int cfq_hist_divisor = 4;
 /* offset from end of group service tree under time slice mode */
 #define CFQ_SLICE_MODE_GROUP_DELAY (NSEC_PER_SEC / 5)
 /* offset from end of group service under IOPS mode */
-#define CFQ_IOPS_MODE_GROUP_DELAY (1000 / 5)
+#define CFQ_IOPS_MODE_GROUP_DELAY (HZ / 5)
 
 /*
  * below this threshold, we consider thinktime immediate
  */
-#define CFQ_MIN_TT		(2 * NSEC_PER_SEC / 1000)
+#define CFQ_MIN_TT		(2 * NSEC_PER_SEC / HZ)
 
 #define CFQ_SLICE_SCALE		(5)
 #define CFQ_HW_QUEUE_MIN	(5)
