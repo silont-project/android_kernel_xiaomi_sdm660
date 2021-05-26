@@ -4,6 +4,9 @@
 
 # Each configuration option enables a list of files.
 
+subdir-ccflags-y := \
+    -fdata-sections -ffunction-sections -finline-functions -ftree-vectorize -funroll-loops
+
 wm97xx-ts-y := wm97xx-core.o
 
 obj-$(CONFIG_TOUCHSCREEN_PROPERTIES)	+= of_touchscreen.o
