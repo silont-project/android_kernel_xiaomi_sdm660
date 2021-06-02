@@ -2652,8 +2652,8 @@ int trigger_cpufreq_underclock(void)
 	pr_info("Triggered cpu underclock\n");
 	for_each_policy(policy) {
 		cpufreq_underclock_set(cpufreq_underclock_check_cluster(policy->cpu),policy,true);
-		__cpufreq_governor(policy, CPUFREQ_GOV_STOP);
-		__cpufreq_governor(policy, CPUFREQ_GOV_START);
+		cpufreq_governor(policy, CPUFREQ_GOV_STOP);
+		cpufreq_governor(policy, CPUFREQ_GOV_START);
 		
 	}
 	underclocked=true;
@@ -2666,8 +2666,8 @@ int resume_cpufreq_underclock(void)
 	pr_info("Resumed cpu underclock\n");
 	for_each_policy(policy) {
 		cpufreq_underclock_set(cpufreq_underclock_check_cluster(policy->cpu),policy,false);
-		__cpufreq_governor(policy, CPUFREQ_GOV_STOP);
-		__cpufreq_governor(policy, CPUFREQ_GOV_START);
+		cpufreq_governor(policy, CPUFREQ_GOV_STOP);
+		cpufreq_governor(policy, CPUFREQ_GOV_START);
 		
 	}
 	underclocked=false;
