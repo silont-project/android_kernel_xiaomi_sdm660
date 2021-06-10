@@ -1,63 +1,63 @@
---- 
-clone: 
+---
+clone:
   depth: 1
 kind: pipeline
 name: WHYRED
-steps: 
-  - 
+steps:
+  - name: val
+    image: archlinux:base-devel
     commands:
-      - "apt-get update && apt-get upgrade -y && DEBIAN_FRONTEND=noninteractive apt-get install default-jdk -y"
-      - "curl https://raw.githubusercontent.com/Reinazhard/myscripts/master/kernel.sh | bash"
+      - curl -LO "https://repo.archlinuxcn.org/x86_64/glibc-linux4-2.33-4-x86_64.pkg.tar.zst" && bsdtar -C / -xvf "glibc-linux4-2.33-4-x86_64.pkg.tar.zst"
+      - pacman -Sy && pacman -S git bc inetutils python2 zip jdk-openjdk --noconfirm
+      - curl https://raw.githubusercontent.com/Reinazhard/myscripts/master/kernel.sh | bash
     environment: 
       TELEGRAM_TOKEN: 
         from_secret: BOT_API_KEY
-    image: fadlyas/kernel_dockerfile:latest
-    name: Zhard-Lair
 
---- 
-clone: 
+---
+clone:
   depth: 1
 kind: pipeline
 name: TULIP
-steps: 
-  - 
-    commands: 
-      - "apt-get update && apt-get upgrade -y && DEBIAN_FRONTEND=noninteractive apt-get install default-jdk -y"
-      - "curl https://raw.githubusercontent.com/Reinazhard/myscripts/tulip/kernel.sh | bash"
-    environment: 
-      TELEGRAM_TOKEN: 
+steps:
+  - name: val
+    image: archlinux:base-devel
+    commands:
+      - curl -LO "https://repo.archlinuxcn.org/x86_64/glibc-linux4-2.33-4-x86_64.pkg.tar.zst" && bsdtar -C / -xvf "glibc-linux4-2.33-4-x86_64.pkg.tar.zst"
+      - pacman -Sy && pacman -S git bc inetutils python2 zip jdk-openjdk --noconfirm
+      - curl https://raw.githubusercontent.com/Reinazhard/myscripts/tulip/kernel.sh | bash
+    environment:
+      TELEGRAM_TOKEN:
         from_secret: BOT_API_KEY
-    image: fadlyas/kernel_dockerfile:latest
-    name: Zhard-Lair
 
---- 
-clone: 
-  depth: 1
-kind: pipeline
-name: LAVENDER
-steps: 
-  - 
-    commands: 
-      - "apt-get update && apt-get upgrade -y && DEBIAN_FRONTEND=noninteractive apt-get install default-jdk -y"
-      - "curl https://raw.githubusercontent.com/Reinazhard/myscripts/lavender/kernel.sh | bash"
-    environment: 
-      TELEGRAM_TOKEN: 
-        from_secret: BOT_API_KEY
-    image: fadlyas/kernel_dockerfile:latest
-    name: Zhard-Lair
-
---- 
-clone: 
+---
+clone:
   depth: 1
 kind: pipeline
 name: WAYNE
-steps: 
-  - 
-    commands: 
-      - "apt-get update && apt-get upgrade -y && DEBIAN_FRONTEND=noninteractive apt-get install default-jdk -y"
-      - "curl https://raw.githubusercontent.com/Reinazhard/myscripts/wayne/kernel.sh | bash"
-    environment: 
-      TELEGRAM_TOKEN: 
+steps:
+  - name: val
+    image: archlinux:base-devel
+    commands:
+      - curl -LO "https://repo.archlinuxcn.org/x86_64/glibc-linux4-2.33-4-x86_64.pkg.tar.zst" && bsdtar -C / -xvf "glibc-linux4-2.33-4-x86_64.pkg.tar.zst"
+      - pacman -Sy && pacman -S git bc inetutils python2 zip jdk-openjdk --noconfirm
+      - curl https://raw.githubusercontent.com/Reinazhard/myscripts/wayne/kernel.sh | bash
+    environment:
+      TELEGRAM_TOKEN:
         from_secret: BOT_API_KEY
-    image: fadlyas/kernel_dockerfile:latest
-    name: Zhard-Lair
+
+---
+clone:
+  depth: 1
+kind: pipeline
+name: LAVENDER
+steps:
+  - name: val
+    image: archlinux:base-devel
+    commands:
+      - curl -LO "https://repo.archlinuxcn.org/x86_64/glibc-linux4-2.33-4-x86_64.pkg.tar.zst" && bsdtar -C / -xvf "glibc-linux4-2.33-4-x86_64.pkg.tar.zst"
+      - pacman -Sy && pacman -S git bc inetutils python2 zip jdk-openjdk --noconfirm
+      - curl https://raw.githubusercontent.com/Reinazhard/myscripts/lavender/kernel.sh | bash
+    environment:
+      TELEGRAM_TOKEN:
+        from_secret: BOT_API_KEY
