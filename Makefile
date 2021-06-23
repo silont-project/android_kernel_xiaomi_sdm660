@@ -630,7 +630,7 @@ endif
 
 ifdef CONFIG_LTO
 LTO_CFLAGS    := -flto -flto=jobserver -fno-fat-lto-objects \
-                 -fuse-linker-plugin -fwhole-program
+                 -fuse-linker-plugin -fipa-pta -fwhole-program
 KBUILD_CFLAGS += $(LTO_CFLAGS) --param=max-inline-insns-auto=1000 \
 		 --param=inline-min-speedup=15 \
 		 --param=max-inline-insns-single=200 \
