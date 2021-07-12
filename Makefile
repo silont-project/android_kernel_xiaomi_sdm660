@@ -661,6 +661,9 @@ ifdef CONFIG_GCC_GRAPHITE
 KBUILD_CFLAGS	+= -fgraphite-identity -floop-nest-optimize
 endif
 
+# Use store motion pass for gcse
+KBUILD_CFLAGS	+= $(call cc-option,-fgcse-sm)
+
 # The arch Makefile can set ARCH_{CPP,A,C}FLAGS to override the default
 # values of the respective KBUILD_* variables
 ARCH_CPPFLAGS :=
