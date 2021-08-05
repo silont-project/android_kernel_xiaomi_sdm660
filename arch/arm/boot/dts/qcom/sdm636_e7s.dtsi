@@ -11,7 +11,7 @@
  * GNU General Public License for more details.
  */
 
-#include "sdm660_e7s.dtsi"
+#include "sdm660.dtsi"
 #include "sdm636-touchpad-e7s.dsi"
 
 / {
