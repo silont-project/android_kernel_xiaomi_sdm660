@@ -77,7 +77,14 @@
 
 #define EXT4_RESERVE_TRANS_BLOCKS	12U
 
-#define EXT4_INDEX_EXTRA_TRANS_BLOCKS	8
+/*
+ * Number of credits needed if we need to insert an entry into a
+ * directory.  For each new index block, we need 4 blocks (old index
+ * block, new index block, bitmap block, bg summary).  For normal
+ * htree directories there are 2 levels; if the largedir feature
+ * enabled it's 3 levels.
+ */
+#define EXT4_INDEX_EXTRA_TRANS_BLOCKS	12U
 
 #ifdef CONFIG_QUOTA
 /* Amount of blocks needed for quota update - we know that the structure was
@@ -175,6 +182,13 @@ struct ext4_journal_cb_entry {
  * There is no guaranteed calling order of multiple registered callbacks on
  * the same transaction.
  */
+static inline void _ext4_journal_callback_add(handle_t *handle,
+			struct ext4_journal_cb_entry *jce)
+{
+	/* Add the jce to transaction's private list */
+	list_add_tail(&jce->jce_list, &handle->h_transaction->t_private_list);
+}
+
 static inline void ext4_journal_callback_add(handle_t *handle,
 			void (*func)(struct super_block *sb,
 				     struct ext4_journal_cb_entry *jce,
@@ -187,9 +201,10 @@ static inline void ext4_journal_callback_add(handle_t *handle,
 	/* Add the jce to transaction's private list */
 	jce->jce_func = func;
 	spin_lock(&sbi->s_md_lock);
-	list_add_tail(&jce->jce_list, &handle->h_transaction->t_private_list);
+	_ext4_journal_callback_add(handle, jce);
 	spin_unlock(&sbi->s_md_lock);
 }
+
 
 /**
  * ext4_journal_callback_del: delete a registered callback
@@ -359,10 +374,21 @@ static inline int ext4_journal_force_commit(journal_t *journal)
 	return 0;
 }
 
-static inline int ext4_jbd2_file_inode(handle_t *handle, struct inode *inode)
+static inline int ext4_jbd2_inode_add_write(handle_t *handle,
+					    struct inode *inode)
 {
 	if (ext4_handle_valid(handle))
-		return jbd2_journal_file_inode(handle, EXT4_I(inode)->jinode);
+		return jbd2_journal_inode_add_write(handle,
+						    EXT4_I(inode)->jinode);
+	return 0;
+}
+
+static inline int ext4_jbd2_inode_add_wait(handle_t *handle,
+					   struct inode *inode)
+{
+	if (ext4_handle_valid(handle))
+		return jbd2_journal_inode_add_wait(handle,
+						   EXT4_I(inode)->jinode);
 	return 0;
 }
 
