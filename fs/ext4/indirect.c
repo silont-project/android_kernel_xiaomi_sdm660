@@ -555,8 +555,23 @@ int ext4_ind_map_blocks(handle_t *handle, struct inode *inode,
 		goto got_it;
 	}
 
-	/* Next simple case - plain lookup or failed read of indirect block */
-	if ((flags & EXT4_GET_BLOCKS_CREATE) == 0 || err == -EIO)
+	/* Next simple case - plain lookup failed */
+	if ((flags & EXT4_GET_BLOCKS_CREATE) == 0) {
+		unsigned epb = inode->i_sb->s_blocksize / sizeof(u32);
+		int i;
+
+		/* Count number blocks in a subtree under 'partial' */
+		count = 1;
+		for (i = 0; partial + i != chain + depth - 1; i++)
+			count *= epb;
+		/* Fill in size of a hole we found */
+		map->m_pblk = 0;
+		map->m_len = min_t(unsigned int, map->m_len, count);
+		goto cleanup;
+	}
+
+	/* Failed read of indirect block */
+	if (err == -EIO)
 		goto cleanup;
 
 	/*
@@ -946,8 +961,7 @@ static int ext4_clear_blocks(handle_t *handle, struct inode *inode,
 	else if (ext4_should_journal_data(inode))
 		flags |= EXT4_FREE_BLOCKS_FORGET;
 
-	if (!ext4_data_block_valid(EXT4_SB(inode->i_sb), block_to_free,
-				   count)) {
+	if (!ext4_inode_block_valid(inode, block_to_free, count)) {
 		EXT4_ERROR_INODE(inode, "attempt to clear invalid "
 				 "blocks %llu len %lu",
 				 (unsigned long long) block_to_free, count);
@@ -1109,8 +1123,7 @@ static void ext4_free_branches(handle_t *handle, struct inode *inode,
 			if (!nr)
 				continue;		/* A hole */
 
-			if (!ext4_data_block_valid(EXT4_SB(inode->i_sb),
-						   nr, 1)) {
+			if (!ext4_inode_block_valid(inode, nr, 1)) {
 				EXT4_ERROR_INODE(inode,
 						 "invalid indirect mapped "
 						 "block %lu (level %d)",

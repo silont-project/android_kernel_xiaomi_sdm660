@@ -161,8 +161,7 @@ int __init ext4_init_es(void)
 
 void ext4_exit_es(void)
 {
-	if (ext4_es_cachep)
-		kmem_cache_destroy(ext4_es_cachep);
+	kmem_cache_destroy(ext4_es_cachep);
 }
 
 void ext4_es_init_tree(struct ext4_es_tree *tree)
@@ -595,7 +594,7 @@ static void ext4_es_insert_extent_ind_check(struct inode *inode,
 			 * We don't need to check unwritten extent because
 			 * indirect-based file doesn't have it.
 			 */
-			BUG_ON(1);
+			BUG();
 		}
 	} else if (retval == 0) {
 		if (ext4_es_is_written(es)) {
@@ -664,7 +663,7 @@ static int __es_insert_extent(struct inode *inode, struct extent_status *newes)
 			}
 			p = &(*p)->rb_right;
 		} else {
-			BUG_ON(1);
+			BUG();
 			return -EINVAL;
 		}
 	}
@@ -707,7 +706,7 @@ int ext4_es_insert_extent(struct inode *inode, ext4_lblk_t lblk,
 	    (status & EXTENT_STATUS_WRITTEN)) {
 		ext4_warning(inode->i_sb, "Inserting extent [%u/%u] as "
 				" delayed and written which can potentially "
-				" cause data loss.\n", lblk, len);
+				" cause data loss.", lblk, len);
 		WARN_ON(1);
 	}
 
@@ -823,8 +822,8 @@ out:
 		es->es_lblk = es1->es_lblk;
 		es->es_len = es1->es_len;
 		es->es_pblk = es1->es_pblk;
-		if (!ext4_es_is_referenced(es))
-			ext4_es_set_referenced(es);
+		if (!ext4_es_is_referenced(es1))
+			ext4_es_set_referenced(es1);
 		stats->es_stats_cache_hits++;
 	} else {
 		stats->es_stats_cache_misses++;
