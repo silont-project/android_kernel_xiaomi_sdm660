@@ -151,6 +151,7 @@ static void mpage_end_io(struct bio *bio)
 	bio_put(bio);
 }
 
+#ifdef DEBUG
 static void
 ext4_submit_bio_read(struct bio *bio)
 {
@@ -174,13 +175,18 @@ ext4_submit_bio_read(struct bio *bio)
 	}
 	submit_bio(READ, bio);
 }
+#else
+static void ext4_submit_bio_read(struct bio *bio)
+{
+	submit_bio(READ, bio);
+}
+#endif
 
 int ext4_mpage_readpages(struct address_space *mapping,
 			 struct list_head *pages, struct page *page,
 			 unsigned nr_pages)
 {
 	struct bio *bio = NULL;
-	unsigned page_idx;
 	sector_t last_block_in_bio = 0;
 
 	struct inode *inode = mapping->host;
@@ -202,7 +208,7 @@ int ext4_mpage_readpages(struct address_space *mapping,
 	map.m_len = 0;
 	map.m_flags = 0;
 
-	for (page_idx = 0; nr_pages; page_idx++, nr_pages--) {
+	for (; nr_pages; nr_pages--) {
 		int fully_mapped = 1;
 		unsigned first_hole = blocks_per_page;
 

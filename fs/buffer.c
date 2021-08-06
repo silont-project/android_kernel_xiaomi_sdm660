@@ -355,7 +355,7 @@ void end_buffer_async_write(struct buffer_head *bh, int uptodate)
 		set_buffer_uptodate(bh);
 	} else {
 		buffer_io_error(bh, ", lost async page write");
-		set_bit(AS_EIO, &page->mapping->flags);
+		mapping_set_error(page->mapping, -EIO);
 		set_buffer_write_io_error(bh);
 		clear_buffer_uptodate(bh);
 		SetPageError(page);
@@ -1425,6 +1425,17 @@ void __breadahead(struct block_device *bdev, sector_t block, unsigned size)
 }
 EXPORT_SYMBOL(__breadahead);
 
+void __breadahead_gfp(struct block_device *bdev, sector_t block, unsigned size,
+		      gfp_t gfp)
+{
+	struct buffer_head *bh = __getblk_gfp(bdev, block, size, gfp);
+	if (likely(bh)) {
+		ll_rw_block(READ, 1, &bh);
+		brelse(bh);
+	}
+}
+EXPORT_SYMBOL(__breadahead_gfp);
+
 /**
  *  __bread_gfp() - reads a specified block and returns the bh
  *  @bdev: the block_device to read from
@@ -1479,47 +1490,11 @@ static bool has_bh_in_lru(int cpu, void *dummy)
 	return 0;
 }
 
-static void __evict_bh_lru(void *arg)
-{
-	struct bh_lru *b = &get_cpu_var(bh_lrus);
-	struct buffer_head *bh = arg;
-	int i;
-
-	for (i = 0; i < BH_LRU_SIZE; i++) {
-		if (b->bhs[i] == bh) {
-			brelse(b->bhs[i]);
-			b->bhs[i] = NULL;
-			goto out;
-		}
-	}
-out:
-	put_cpu_var(bh_lrus);
-}
-
-static bool bh_exists_in_lru(int cpu, void *arg)
-{
-	struct bh_lru *b = per_cpu_ptr(&bh_lrus, cpu);
-	struct buffer_head *bh = arg;
-	int i;
-
-	for (i = 0; i < BH_LRU_SIZE; i++) {
-		if (b->bhs[i] == bh)
-			return 1;
-	}
-
-	return 0;
-
-}
 void invalidate_bh_lrus(void)
 {
 	on_each_cpu_cond(has_bh_in_lru, invalidate_bh_lru, NULL, 1, GFP_KERNEL);
 }
 EXPORT_SYMBOL_GPL(invalidate_bh_lrus);
-
-static void evict_bh_lrus(struct buffer_head *bh)
-{
-	on_each_cpu_cond(bh_exists_in_lru, __evict_bh_lru, bh, 1, GFP_ATOMIC);
-}
 
 void set_bh_page(struct buffer_head *bh,
 		struct page *page, unsigned long offset)
@@ -3247,16 +3222,9 @@ drop_buffers(struct page *page, struct buffer_head **buffers_to_free)
 	bh = head;
 	do {
 		if (buffer_write_io_error(bh) && page->mapping)
-			set_bit(AS_EIO, &page->mapping->flags);
-		if (buffer_busy(bh)) {
-			/*
-			 * Check if the busy failure was due to an
-			 * outstanding LRU reference
-			 */
-			evict_bh_lrus(bh);
-			if (buffer_busy(bh))
-				goto failed;
-		}
+			mapping_set_error(page->mapping, -EIO);
+		if (buffer_busy(bh))
+			goto failed;
 		bh = bh->b_this_page;
 	} while (bh != head);
 

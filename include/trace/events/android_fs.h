@@ -36,6 +36,7 @@ DEFINE_EVENT(android_fs_data_end_template, android_fs_datawrite_end,
 /* Sizes an on-stack array, so careful if sizing this up ! */
 #define MAX_TRACE_PATHBUF_LEN	256
 
+#ifdef DEBUG
 static inline char *
 android_fstrace_get_pathname(char *buf, int buflen, struct inode *inode)
 {
@@ -62,4 +63,12 @@ android_fstrace_get_pathname(char *buf, int buflen, struct inode *inode)
 	}
 	return path;
 }
+#else
+static inline char *
+android_fstrace_get_pathname(char *buf, int buflen, struct inode *inode)
+{
+	return NULL;
+}
+#endif
+
 #endif
