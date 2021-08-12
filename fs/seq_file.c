@@ -14,6 +14,7 @@
 #include <linux/mm.h>
 #include <linux/printk.h>
 #include <linux/string_helpers.h>
+#include <linux/pagemap.h>
 
 #include <asm/uaccess.h>
 #include <asm/page.h>
