@@ -382,8 +382,6 @@ struct qpnp_hap {
 	u8				act_type;
 	u8				wave_shape;
 	u8				wave_samp[QPNP_HAP_WAV_SAMP_LEN];
-	u8				wave_samp_two[QPNP_HAP_WAV_SAMP_LEN];
-	u8				wave_samp_three[QPNP_HAP_WAV_SAMP_LEN];
 	u8				shadow_wave_samp[QPNP_HAP_WAV_SAMP_LEN];
 	u8				brake_pat[QPNP_HAP_BRAKE_PAT_LEN];
 	u8				sc_count;
@@ -1050,27 +1048,6 @@ static int qpnp_hap_parse_buffer_dt(struct qpnp_hap *hap)
 	} else {
 		memcpy(hap->wave_samp, prop->value, QPNP_HAP_WAV_SAMP_LEN);
 	}
-	
-	prop = of_find_property(pdev->dev.of_node,
-		"qcom,wave-samples-two", &temp);
-	if (!prop || temp != QPNP_HAP_WAV_SAMP_LEN) {
-		pr_err("Invalid wave samples, use default");
-		for (i = 0; i < QPNP_HAP_WAV_SAMP_LEN; i++)
-			hap->wave_samp_two[i] = QPNP_HAP_WAV_SAMP_MAX;
-	} else {
-		memcpy(hap->wave_samp_two, prop->value, QPNP_HAP_WAV_SAMP_LEN);
-	}
-	
-	prop = of_find_property(pdev->dev.of_node,
-		"qcom,wave-samples-three", &temp);
-	if (!prop || temp != QPNP_HAP_WAV_SAMP_LEN) {
-		pr_err("Invalid wave samples, use default");
-		for (i = 0; i < QPNP_HAP_WAV_SAMP_LEN; i++)
-			hap->wave_samp_three[i] = QPNP_HAP_WAV_SAMP_MAX;
-	} else {
-		memcpy(hap->wave_samp_three, prop->value, QPNP_HAP_WAV_SAMP_LEN);
-	}
-	
 
 	return 0;
 }
@@ -1673,7 +1650,7 @@ static ssize_t qpnp_hap_hi_z_period_show(struct device *dev,
 	struct timed_output_dev *timed_dev = dev_get_drvdata(dev);
 	struct qpnp_hap *hap = container_of(timed_dev, struct qpnp_hap,
 					 timed_dev);
-	char *str = NULL;
+	char *str;
 
 	switch (hap->ares_cfg.lra_high_z) {
 	case QPNP_HAP_LRA_HIGH_Z_NONE:
@@ -2254,51 +2231,58 @@ static void qpnp_hap_td_enable(struct timed_output_dev *dev, int time_ms)
 {
 	struct qpnp_hap *hap = container_of(dev, struct qpnp_hap,
 					 timed_dev);
-	int rc, vmax_mv;
+	bool state = !!time_ms;
+	ktime_t rem;
+	int rc;
 
 	if (time_ms < 0)
 		return;
 
 	mutex_lock(&hap->lock);
 
-	if (time_ms == 0) {
-		/* disable haptics */
-		hrtimer_cancel(&hap->hap_timer);
-		hap->state = 0;
-		schedule_work(&hap->work);
+	if (hap->state == state) {
+		if (state) {
+			rem = hrtimer_get_remaining(&hap->hap_timer);
+			if (time_ms > ktime_to_ms(rem)) {
+				time_ms = (time_ms > hap->timeout_ms ?
+						 hap->timeout_ms : time_ms);
+				hrtimer_cancel(&hap->hap_timer);
+				hap->play_time_ms = time_ms;
+				hrtimer_start(&hap->hap_timer,
+						ktime_set(time_ms / 1000,
+						(time_ms % 1000) * 1000000),
+						HRTIMER_MODE_REL);
+			}
+		}
 		mutex_unlock(&hap->lock);
 		return;
 	}
 
-	if (time_ms < 10)
-		time_ms = 10;
+	hap->state = state;
+	if (!hap->state) {
+		hrtimer_cancel(&hap->hap_timer);
+	} else {
+		if (time_ms < 10)
+			time_ms = 10;
 
-#ifdef CONFIG_KERNEL_CUSTOM_E7S
-
-    pr_info("zjl hasfasda E7S haptic  =%d\n",time_ms);
-
- 	vmax_mv = hap->vmax_mv;
-	qpnp_hap_vmax_config(hap, vmax_mv, false);
-#endif
-
-	hrtimer_cancel(&hap->hap_timer);
-
-	if (hap->auto_mode) {
-		rc = qpnp_hap_auto_mode_config(hap, time_ms);
-		if (rc < 0) {
-			pr_err("Unable to do auto mode config\n");
-			mutex_unlock(&hap->lock);
-			return;
+		if (hap->auto_mode) {
+			rc = qpnp_hap_auto_mode_config(hap, time_ms);
+			if (rc < 0) {
+				pr_err("Unable to do auto mode config\n");
+				mutex_unlock(&hap->lock);
+				return;
+			}
 		}
+
+		time_ms = (time_ms > hap->timeout_ms ?
+				 hap->timeout_ms : time_ms);
+		hap->play_time_ms = time_ms;
+		hrtimer_start(&hap->hap_timer,
+				ktime_set(time_ms / 1000,
+				(time_ms % 1000) * 1000000),
+				HRTIMER_MODE_REL);
 	}
 
-	time_ms = (time_ms > hap->timeout_ms ? hap->timeout_ms : time_ms);
-	hap->play_time_ms = time_ms;
-	hap->state = 1;
-	pr_info("zjl aaa  haptic  =%d\n",time_ms);
-	hrtimer_start(&hap->hap_timer,
-		ktime_set(time_ms / 1000, (time_ms % 1000) * 1000000),
-		HRTIMER_MODE_REL);
 	mutex_unlock(&hap->lock);
 	schedule_work(&hap->work);
 }
@@ -3000,11 +2984,11 @@ static int qpnp_haptic_probe(struct platform_device *pdev)
 	hap = devm_kzalloc(&pdev->dev, sizeof(*hap), GFP_KERNEL);
 	if (!hap)
 		return -ENOMEM;
-	hap->regmap = dev_get_regmap(pdev->dev.parent, NULL);
-	if (!hap->regmap) {
-		dev_err(&pdev->dev, "Couldn't get parent's regmap\n");
-		return -EINVAL;
-	}
+		hap->regmap = dev_get_regmap(pdev->dev.parent, NULL);
+		if (!hap->regmap) {
+			pr_err("Couldn't get parent's regmap\n");
+			return -EINVAL;
+		}
 
 	hap->pdev = pdev;
 
