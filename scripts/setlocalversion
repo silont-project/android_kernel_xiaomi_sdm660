@@ -64,7 +64,7 @@ scm_version()
 			fi
 
 			# Add -g and exactly 12 hex chars.
-			printf '%s%s' -g "$(echo $head | cut -c1-12)"
+			printf '%s%s' ~g "$(echo $head | cut -c1-12)"
 		fi
 
 		# Check for uncommitted changes.
