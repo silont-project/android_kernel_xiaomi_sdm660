@@ -765,8 +765,8 @@ static int sugov_init(struct cpufreq_policy *policy)
 
 		if (cpumask_test_cpu(policy->cpu, cpu_perf_mask)) {
 	                tunables->up_rate_limit_us = 1000;
-                	tunables->down_rate_limit_us = 4000;
-			tunables->iowait_boost_enable = 0;
+                	tunables->down_rate_limit_us = 3000;
+			tunables->iowait_boost_enable = 1;
         	}
 
 		if (cpumask_test_cpu(policy->cpu, cpu_lp_mask)) {
