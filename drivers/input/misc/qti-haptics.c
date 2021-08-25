@@ -1201,7 +1201,7 @@ static void verify_brake_setting(struct qti_hap_effect *effect)
 
 static int qti_haptics_parse_dt_per_effect(struct qti_hap_chip *chip)
 {
-	const struct device_node *node = chip->dev->of_node;
+	struct device_node *node = chip->dev->of_node;
 	struct device_node *child_node;
 	struct qti_hap_config *config = &chip->config;
 	struct qti_hap_effect *effect;
@@ -1366,7 +1366,7 @@ static int qti_haptics_parse_dt_per_effect(struct qti_hap_chip *chip)
 static int qti_haptics_lra_parse_dt(struct qti_hap_chip *chip)
 {
 	struct qti_hap_config *config = &chip->config;
-	const struct device_node *node = chip->dev->of_node;
+	struct device_node *node = chip->dev->of_node;
 	const char *str;
 	int rc;
 
@@ -1412,7 +1412,7 @@ static int qti_haptics_lra_parse_dt(struct qti_hap_chip *chip)
 static int qti_haptics_parse_dt(struct qti_hap_chip *chip)
 {
 	struct qti_hap_config *config = &chip->config;
-	const struct device_node *node = chip->dev->of_node;
+	struct device_node *node = chip->dev->of_node;
 	const char *str;
 	int rc = 0, tmp;
 
